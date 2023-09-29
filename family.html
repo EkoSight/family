@@ -1,0 +1,96 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+  <meta http-equiv="Content-Style-Type" content="text/css">
+  <title></title>
+  <meta name="Generator" content="Cocoa HTML Writer">
+  <meta name="CocoaVersion" content="2299.6">
+  <style type="text/css">
+    p.p1 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica}
+    p.p2 {margin: 0.0px 0.0px 0.0px 0.0px; font: 12.0px Helvetica; min-height: 14.0px}
+  </style>
+</head>
+<body>
+<p class="p1">&lt;!DOCTYPE html&gt;</p>
+<p class="p1">&lt;html lang="en"&gt;</p>
+<p class="p1">&lt;head&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta charset="UTF-8"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;title&gt;Family Tree&lt;/title&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;style&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>body {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>font-family: Arial, sans-serif;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin: 20px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>#familyTree {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin-top: 20px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.branch {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin-left: 40px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-left: 2px solid #000;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding-left: 10px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">        </span>.member {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>margin-bottom: 10px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>background-color: #f0f0f0;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>padding: 5px;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>border-radius: 5px;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/style&gt;</p>
+<p class="p1">&lt;/head&gt;</p>
+<p class="p1">&lt;body&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;h1&gt;Family Tree&lt;/h1&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;label for="familyName"&gt;Family Name: &lt;/label&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;input type="text" id="familyName" placeholder="Enter family name"&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;button onclick="addFamily()"&gt;Add Family&lt;/button&gt;</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;div id="familyTree"&gt;&lt;/div&gt;</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;script&gt;</p>
+<p class="p1"><span class="Apple-converted-space">        </span>function addFamily() {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>var familyName = document.getElementById('familyName').value;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (familyName.trim() === '') {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>alert('Please enter a family name.');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>var familyTree = document.getElementById('familyTree');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>var newBranch = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>newBranch.className = 'branch';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>var newMember = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>newMember.className = 'member';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>newMember.textContent = familyName;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>newBranch.appendChild(newMember);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>var addBranchButton = document.createElement('button');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>addBranchButton.textContent = 'Add Branch';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>addBranchButton.onclick = function() {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>addBranch(newBranch);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>};</p>
+<p class="p1"><span class="Apple-converted-space">            </span>newBranch.appendChild(addBranchButton);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>familyTree.appendChild(newBranch);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p2"><br></p>
+<p class="p1"><span class="Apple-converted-space">        </span>function addBranch(parentBranch) {</p>
+<p class="p1"><span class="Apple-converted-space">            </span>var branchName = prompt('Enter branch name:');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>if (branchName.trim() === '') {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>alert('Branch name cannot be empty.');</p>
+<p class="p1"><span class="Apple-converted-space">                </span>return;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>}</p>
+<p class="p1"><span class="Apple-converted-space">            </span>var newBranch = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>newBranch.className = 'branch';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>var newMember = document.createElement('div');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>newMember.className = 'member';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>newMember.textContent = branchName;</p>
+<p class="p1"><span class="Apple-converted-space">            </span>newBranch.appendChild(newMember);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>var addBranchButton = document.createElement('button');</p>
+<p class="p1"><span class="Apple-converted-space">            </span>addBranchButton.textContent = 'Add Branch';</p>
+<p class="p1"><span class="Apple-converted-space">            </span>addBranchButton.onclick = function() {</p>
+<p class="p1"><span class="Apple-converted-space">                </span>addBranch(newBranch);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>};</p>
+<p class="p1"><span class="Apple-converted-space">            </span>newBranch.appendChild(addBranchButton);</p>
+<p class="p1"><span class="Apple-converted-space">            </span>parentBranch.appendChild(newBranch);</p>
+<p class="p1"><span class="Apple-converted-space">        </span>}</p>
+<p class="p1"><span class="Apple-converted-space">    </span>&lt;/script&gt;</p>
+<p class="p1">&lt;/body&gt;</p>
+<p class="p1">&lt;/html&gt;</p>
+</body>
+</html>
