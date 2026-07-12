@@ -54,7 +54,29 @@ FRONTEND_DIR = os.path.join(
 
 @app.get("/favicon.ico")
 def favicon():
-    return Response(status_code=204)
+    return FileResponse(os.path.join(FRONTEND_DIR, "icon-192.png"))
+
+
+# PWA + icon assets served at the site root (service-worker scope needs root).
+_ROOT_FILES = {
+    "manifest.webmanifest": "application/manifest+json",
+    "sw.js": "application/javascript",
+    "icon-192.png": "image/png",
+    "icon-512.png": "image/png",
+    "icon-maskable-512.png": "image/png",
+    "apple-touch-icon.png": "image/png",
+}
+
+
+def _make_root_route(fname: str, media: str):
+    def _route():
+        return FileResponse(os.path.join(FRONTEND_DIR, fname), media_type=media)
+    return _route
+
+
+for _fname, _media in _ROOT_FILES.items():
+    app.add_api_route(f"/{_fname}", _make_root_route(_fname, _media),
+                      methods=["GET"], include_in_schema=False)
 
 
 @app.get("/")

@@ -22,10 +22,9 @@ def dashboard_counts(db: Session) -> dict:
     blocked = open_q.filter(models.Task.blocked.is_(True)).count()
     needs_approval = db.query(models.AgentAction).filter(
         models.AgentAction.execution_status == "awaiting_approval").count()
-    # tasks the CEO needs to review/approve
-    needs_approval += _open_tasks(db).filter(
-        models.Task.approval_required.is_(True),
-        models.Task.status == "in_progress").count()
+    # tasks submitted by employees awaiting the CEO/manager sign-off
+    needs_approval += db.query(models.Task).filter(
+        models.Task.status == "submitted").count()
     waiting_for_others = open_q.filter(
         models.Task.assigned_to.isnot(None)).count()
     needs_attention = overdue + blocked + needs_approval
@@ -53,6 +52,7 @@ def _task_view(db: Session, t: models.Task) -> dict:
         "project": proj.project_name if proj else None,
         "blocked": t.blocked, "blocker_reason": t.blocker_reason,
         "approval_required": t.approval_required,
+        "acceptance_status": t.acceptance_status,
     }
 
 

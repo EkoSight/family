@@ -48,8 +48,21 @@ People · Projects · Tasks · Commitments · Decisions · Conversations · Memo
 Process observations · Process definitions · Agent actions — plus an append-only
 `events` log that feeds process learning.
 
-### The 6 MVP screens (`frontend/index.html`)
-Conversation · Today · Company · Memory · Processes · Agent Activity.
+### The app (`frontend/index.html`) — installable PWA, mobile-first
+A single-page app that installs to your phone's home screen (Add to Home Screen →
+own icon, full-screen, offline app-shell) and adapts from a desktop sidebar to a
+mobile bottom-nav. **Role-aware:**
+- **CEO / manager:** Today · Chat · People · Company · Team · Memory · Processes · Activity
+- **Team member:** My Work · Chat · Team
+
+**Multi-user:** each person signs in with their work email and sees their own
+view. Members **accept/decline** assigned tasks, update **progress**, **report
+blockers**, and **submit completion**; approval-required work routes back to the
+CEO/manager to sign off. The CEO manages people (add / edit / enable-disable) and
+assigns tasks from a form or from chat.
+
+> Auth is a lightweight email identify for the MVP — production swaps in Google
+> Workspace login. No passwords are stored.
 
 ## Run it locally (zero external dependencies)
 
@@ -93,7 +106,15 @@ Workspace MCP integrations.
 `PATCH /api/tasks/{id}` · `GET/POST/DELETE /api/memory` · `GET /api/commitments` ·
 `GET /api/decisions` · `GET /api/processes` · `POST /api/processes/approve` ·
 `GET /api/actions` · `POST /api/actions/{id}/{approve,reject}` ·
-`GET /api/{conversations,events}` · `GET /health`.
+`GET /api/{conversations,events}` · `GET /health` ·
+`POST /api/login` · `POST/PATCH /api/people` · `POST /api/people/{id}/{activate,deactivate}` ·
+`POST /api/tasks` · `POST /api/tasks/{id}/{accept,decline,progress,blocker,unblock,complete,approve}` ·
+`GET /api/my/tasks` · `GET /api/team/workload`.
+
+### Install as a mobile app
+Open the site on your phone → browser menu → **Add to Home Screen**. It launches
+full-screen with its own icon. (A true native Android build can follow once the
+backend is deployed to a public URL.)
 
 ## Roadmap (from the phase plan)
 
@@ -101,8 +122,9 @@ Workspace MCP integrations.
   dashboard, audit log, permissions. ✅
 - **Phase 2:** morning/evening briefings ✅, commitments ✅, decision register ✅,
   Calendar + Gmail read/draft, meeting prep, voice-note processing.
-- **Phase 3:** employee login, task acceptance, progress/blocker reporting,
-  manager approval, team workload.
+- **Phase 3:** employee login ✅, task acceptance ✅, progress/blocker reporting ✅,
+  completion submission ✅, manager approval ✅, team workload ✅.
+- **Mobile app:** installable PWA (home-screen icon, standalone, offline shell) ✅.
 - **Phase 4:** unified event log ✅, repetition detection ✅, process maps,
   bottleneck analysis.
 - **Phase 5:** reusable workflow blocks (trigger/condition/action/approval/
