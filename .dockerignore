@@ -1,0 +1,11 @@
+**/__pycache__/
+**/*.pyc
+**/.venv/
+**/venv/
+**/*.db
+.git/
+.github/
+deploy/
+*.md
+family.html
+scratchpad/
