@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ekosight CEO Agent — V1</title>
+<style>
+  :root{
+    --bg:#0f1216; --panel:#171b22; --panel2:#1e242d; --line:#2a323d;
+    --text:#e7ecf2; --muted:#8b97a7; --accent:#4f8cff; --green:#3fb950;
+    --amber:#d29922; --red:#f85149; --chip:#232b36;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+    background:var(--bg);color:var(--text);font-size:14px}
+  header{display:flex;align-items:center;gap:14px;padding:14px 20px;
+    border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:5}
+  header h1{font-size:16px;margin:0;font-weight:600}
+  header .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+  nav{display:flex;gap:4px;margin-left:auto;flex-wrap:wrap}
+  nav button{background:transparent;border:1px solid transparent;color:var(--muted);
+    padding:7px 12px;border-radius:8px;cursor:pointer;font-size:13px}
+  nav button.active{background:var(--panel2);color:var(--text);border-color:var(--line)}
+  nav button:hover{color:var(--text)}
+  main{max-width:1100px;margin:0 auto;padding:22px 20px 60px}
+  .screen{display:none}.screen.active{display:block}
+  h2{font-size:15px;margin:0 0 12px;font-weight:600}
+  .grid{display:grid;gap:12px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .kpi .n{font-size:28px;font-weight:700}
+  .kpi .l{color:var(--muted);font-size:12px;margin-top:2px}
+  .kpi.attention .n{color:var(--accent)} .kpi.approve .n{color:var(--amber)}
+  .kpi.overdue .n{color:var(--red)} .kpi.blocked .n{color:var(--red)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+    padding:16px;margin-bottom:14px}
+  .card h3{margin:0 0 10px;font-size:13px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:.5px;font-weight:600}
+  .row{display:flex;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .row .grow{flex:1;min-width:0}
+  .pill{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--chip);color:var(--muted)}
+  .pill.high{color:var(--red)} .pill.green{color:var(--green)}
+  .pill.amber{color:var(--amber)} .pill.red{color:var(--red)}
+  .muted{color:var(--muted)} .small{font-size:12px}
+  button.act{background:var(--accent);color:#fff;border:none;padding:8px 14px;border-radius:8px;
+    cursor:pointer;font-size:13px} button.act.sec{background:var(--panel2);color:var(--text);
+    border:1px solid var(--line)} button.act.danger{background:var(--red)}
+  button.act.ok{background:var(--green)}
+  /* chat */
+  .chatwrap{display:flex;flex-direction:column;height:calc(100vh - 150px)}
+  .stream{flex:1;overflow-y:auto;padding:4px}
+  .msg{margin:10px 0;max-width:80%}
+  .msg.me{margin-left:auto;text-align:right}
+  .msg .bubble{display:inline-block;text-align:left;padding:10px 14px;border-radius:14px;
+    background:var(--panel2);border:1px solid var(--line)}
+  .msg.me .bubble{background:var(--accent);border-color:var(--accent);color:#fff}
+  .composer{display:flex;gap:8px;padding-top:10px;border-top:1px solid var(--line)}
+  .composer input{flex:1;background:var(--panel2);border:1px solid var(--line);
+    color:var(--text);padding:12px 14px;border-radius:10px;font-size:14px}
+  .mic{width:46px;height:46px;border-radius:50%;border:1px solid var(--line);
+    background:var(--panel2);color:var(--text);cursor:pointer;font-size:18px}
+  .mic.rec{background:var(--red);border-color:var(--red)}
+  .interp{background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+    padding:12px;margin-top:8px}
+  .interp .item{padding:6px 0;border-bottom:1px solid var(--line)}
+  .interp .item:last-child{border-bottom:none}
+  .btnrow{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);font-size:13px}
+  th{color:var(--muted);font-weight:600;font-size:11px;text-transform:uppercase}
+  .empty{color:var(--muted);padding:16px;text-align:center}
+  code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="dot"></div>
+  <h1>Ekosight CEO Agent <span class="muted small">· V1</span></h1>
+  <nav id="nav"></nav>
+</header>
+<main>
+  <section id="conversation" class="screen active"></section>
+  <section id="today" class="screen"></section>
+  <section id="company" class="screen"></section>
+  <section id="memory" class="screen"></section>
+  <section id="processes" class="screen"></section>
+  <section id="activity" class="screen"></section>
+</main>
+
+<script>
+const API = '';
+const SCREENS = [
+  ['conversation','Conversation'],['today','Today'],['company','Company'],
+  ['memory','Memory'],['processes','Processes'],['activity','Agent Activity']
+];
+let current = 'conversation';
+
+const nav = document.getElementById('nav');
+SCREENS.forEach(([id,label])=>{
+  const b=document.createElement('button');
+  b.textContent=label; b.dataset.id=id;
+  if(id===current)b.classList.add('active');
+  b.onclick=()=>go(id);
+  nav.appendChild(b);
+});
+function go(id){
+  current=id;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
+  render(id);
+}
+async function api(path,opts){
+  const r=await fetch(API+path,opts);
+  if(!r.ok)throw new Error(await r.text());
+  return r.json();
+}
+function el(html){const d=document.createElement('div');d.innerHTML=html.trim();return d.firstChild;}
+function esc(s){return (s??'').toString().replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+
+/* ---------------- Conversation ---------------- */
+let chatLog=[];
+function renderConversation(){
+  const s=document.getElementById('conversation');
+  s.innerHTML=`
+    <div class="chatwrap">
+      <div class="stream" id="stream"></div>
+      <div class="composer">
+        <button class="mic" id="mic" title="Hold to talk">🎙️</button>
+        <input id="msg" placeholder="Message your CEO Agent… e.g. Ask Priya to prepare 3 posts by Thursday" />
+        <button class="act" id="send">Send</button>
+      </div>
+    </div>`;
+  const stream=s.querySelector('#stream');
+  chatLog.forEach(m=>stream.appendChild(m));
+  if(!chatLog.length){
+    stream.appendChild(el(`<div class="empty">Speak or type naturally. I convert it into tasks, decisions, commitments and approvals.</div>`));
+  }
+  const input=s.querySelector('#msg');
+  s.querySelector('#send').onclick=()=>sendMsg(input);
+  input.onkeydown=e=>{if(e.key==='Enter')sendMsg(input);};
+  setupMic(s.querySelector('#mic'), input);
+  stream.scrollTop=stream.scrollHeight;
+}
+async function sendMsg(input){
+  const text=input.value.trim(); if(!text)return; input.value='';
+  const stream=document.getElementById('stream');
+  const mine=el(`<div class="msg me"><div class="bubble">${esc(text)}</div></div>`);
+  chatLog.push(mine); stream.appendChild(mine);
+  const res=await api('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({message:text})});
+  stream.appendChild(renderInterp(res));
+  stream.scrollTop=stream.scrollHeight;
+}
+function renderInterp(res){
+  let items=res.interpretation.map(i=>`<div class="item">• ${esc(i.summary)} <span class="muted small">(${esc(i.tool)})</span></div>`).join('');
+  let exec=res.executed.map(e=>`<div class="item">✅ ${esc(e.summary)}</div>`).join('');
+  let wait=res.awaiting_approval.map(a=>`
+     <div class="item">⏳ ${esc(a.summary)} <span class="pill amber">${esc(a.risk||'approval')}</span>
+       <div class="btnrow">
+         <button class="act ok" onclick="approve('${a.action_id}',this)">Approve</button>
+         <button class="act danger" onclick="reject('${a.action_id}',this)">Reject</button>
+       </div></div>`).join('');
+  const wrap=el(`<div class="msg"><div class="bubble" style="max-width:520px">
+     <b>I identified:</b>
+     <div class="interp">${items||'<div class="item muted">Nothing actionable.</div>'}
+       ${exec?`<div style="margin-top:8px">${exec}</div>`:''}
+       ${wait?`<div style="margin-top:8px">${wait}</div>`:''}
+     </div></div></div>`);
+  chatLog.push(wrap);
+  return wrap;
+}
+async function approve(id,btn){
+  await api('/api/actions/'+id+'/approve',{method:'POST'});
+  btn.parentElement.innerHTML='<span class="pill green">✅ Approved & executed</span>';
+}
+async function reject(id,btn){
+  await api('/api/actions/'+id+'/reject',{method:'POST'});
+  btn.parentElement.innerHTML='<span class="pill red">Rejected</span>';
+}
+/* push-to-talk via Web Speech API if available; else prompt for a voice note */
+function setupMic(mic,input){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    mic.onclick=()=>{const t=prompt('Voice note (transcribe): speak/paste text');if(t)input.value=t;};
+    return;
+  }
+  const rec=new SR(); rec.lang='en-IN'; rec.interimResults=false;
+  let on=false;
+  mic.onclick=()=>{ on?rec.stop():rec.start(); };
+  rec.onstart=()=>{on=true;mic.classList.add('rec');};
+  rec.onend=()=>{on=false;mic.classList.remove('rec');};
+  rec.onresult=e=>{input.value=e.results[0][0].transcript;};
+}
+
+/* ---------------- Today ---------------- */
+async function renderToday(){
+  const s=document.getElementById('today');
+  const d=await api('/api/briefing/morning');
+  const c=d.counts;
+  const kpi=(cls,n,l)=>`<div class="kpi ${cls}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  const taskRow=t=>`<div class="row"><div class="grow">${esc(t.title)}
+     <div class="muted small">${esc(t.assigned_to||'—')} ${t.project?'· '+esc(t.project):''}</div></div>
+     ${t.deadline?`<span class="pill ${t.deadline<new Date().toISOString().slice(0,10)?'red':''}">${t.deadline}</span>`:''}
+     <span class="pill ${t.priority}">${t.priority}</span></div>`;
+  s.innerHTML=`
+    <h2>${esc(d.greeting)} <span class="muted small">· ${d.date}</span></h2>
+    <div class="grid kpis" style="margin-bottom:16px">
+      ${kpi('attention',c.needs_attention,'Needs My Attention')}
+      ${kpi('approve',c.needs_approval,'Needs My Approval')}
+      ${kpi('overdue',c.overdue,'Overdue')}
+      ${kpi('blocked',c.blocked,'Blocked')}
+      ${kpi('',c.waiting_for_others,'Waiting for Others')}
+      ${kpi('',c.upcoming_meetings,'Upcoming Meetings')}
+      ${kpi('',c.processes_detected,'Processes Detected')}
+    </div>
+    <div class="card"><h3>Today's priorities</h3>${d.todays_priorities.map(taskRow).join('')||'<div class="empty">Clear.</div>'}</div>
+    <div class="card"><h3>Your commitments</h3>${d.your_commitments.map(x=>`<div class="row"><div class="grow">${esc(x.text)}<div class="muted small">to ${esc(x.made_to||'—')}</div></div>${x.deadline?`<span class="pill">${x.deadline}</span>`:''}</div>`).join('')||'<div class="empty">None.</div>'}</div>
+    <div class="card"><h3>Waiting for others</h3>${d.waiting_for_others.map(taskRow).join('')||'<div class="empty">None.</div>'}</div>
+    <div class="card"><h3>Major project health</h3>${d.major_project_health.map(p=>`<div class="row"><div class="grow">${esc(p.name)}</div><span class="pill ${p.health}">${p.health}</span><span class="muted small">${p.progress}%</span></div>`).join('')||'<div class="empty">None.</div>'}</div>
+    <div class="card"><h3>Agent recommendations</h3>${d.recommendations.map(r=>`<div class="row"><div class="grow">💡 ${esc(r)}</div></div>`).join('')}</div>`;
+}
+
+/* ---------------- Company ---------------- */
+async function renderCompany(){
+  const s=document.getElementById('company');
+  const [projects,people,tasks]=await Promise.all([
+    api('/api/projects'),api('/api/people'),api('/api/tasks')]);
+  const trow=t=>`<tr><td>${esc(t.title)}</td><td>${esc(t.assigned_to||'—')}</td>
+     <td>${esc(t.project||'—')}</td><td><span class="pill ${t.priority}">${t.priority}</span></td>
+     <td>${esc(t.status)}${t.blocked?' <span class="pill red">blocked</span>':''}</td>
+     <td>${t.deadline||'—'}</td></tr>`;
+  s.innerHTML=`
+    <h2>Company</h2>
+    <div class="card"><h3>Projects</h3><table><tr><th>Project</th><th>Owner</th><th>Health</th><th>Progress</th><th>Deadline</th></tr>
+      ${projects.map(p=>`<tr><td>${esc(p.project_name)}</td><td>${esc(p.owner||'—')}</td><td><span class="pill ${p.health}">${p.health}</span></td><td>${p.progress}%</td><td>${p.deadline||'—'}</td></tr>`).join('')}</table></div>
+    <div class="card"><h3>People</h3><table><tr><th>Name</th><th>Designation</th><th>Department</th><th>Access</th></tr>
+      ${people.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.designation||'')}</td><td>${esc(p.department||'')}</td><td><span class="pill">${esc(p.permission_level)}</span></td></tr>`).join('')}</table></div>
+    <div class="card"><h3>Tasks</h3><table><tr><th>Task</th><th>Owner</th><th>Project</th><th>Priority</th><th>Status</th><th>Deadline</th></tr>
+      ${tasks.map(trow).join('')||'<tr><td colspan=6 class="empty">No tasks yet.</td></tr>'}</table></div>`;
+}
+
+/* ---------------- Memory ---------------- */
+async function renderMemory(){
+  const s=document.getElementById('memory');
+  const [mem,commits,decisions]=await Promise.all([
+    api('/api/memory'),api('/api/commitments'),api('/api/decisions')]);
+  s.innerHTML=`
+    <h2>Memory</h2>
+    <div class="card"><h3>Decisions</h3>${decisions.map(d=>`<div class="row"><div class="grow">${esc(d.decision)}<div class="muted small">${esc(d.owner||'')} · ${d.decision_date.slice(0,10)}</div></div></div>`).join('')||'<div class="empty">None.</div>'}</div>
+    <div class="card"><h3>Commitments</h3>${commits.map(c=>`<div class="row"><div class="grow">${esc(c.text)}<div class="muted small">to ${esc(c.made_to||'—')} · ${esc(c.status)}</div></div>${c.deadline?`<span class="pill">${c.deadline}</span>`:''}</div>`).join('')||'<div class="empty">None.</div>'}</div>
+    <div class="card"><h3>Company facts & preferences</h3>
+      ${mem.map(m=>`<div class="row"><div class="grow">${esc(m.content)}<div class="muted small">${esc(m.memory_type)} · ${esc(m.subject||'')}</div></div>
+        <button class="act sec" onclick="delMem('${m.memory_id}')">Delete</button></div>`).join('')||'<div class="empty">None.</div>'}
+      <div class="btnrow"><input id="memc" placeholder="Add a fact/preference…" style="flex:1;background:var(--panel2);border:1px solid var(--line);color:var(--text);padding:8px;border-radius:8px">
+        <button class="act" onclick="addMem()">Add</button></div></div>`;
+}
+async function addMem(){
+  const v=document.getElementById('memc').value.trim(); if(!v)return;
+  await api('/api/memory',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({content:v,memory_type:'fact'})});
+  renderMemory();
+}
+async function delMem(id){await api('/api/memory/'+id,{method:'DELETE'});renderMemory();}
+
+/* ---------------- Processes ---------------- */
+async function renderProcesses(){
+  const s=document.getElementById('processes');
+  const d=await api('/api/processes');
+  s.innerHTML=`
+    <h2>Processes</h2>
+    <div class="card"><h3>Process candidates (observed)</h3>
+      ${d.candidates.length?d.candidates.map(c=>`<div class="row"><div class="grow">
+        <b>${esc(c.process_candidate)}</b> <span class="muted small">×${c.frequency}</span>
+        <div class="muted small">${esc(c.event_sequence||c.recommendation||'')}</div></div>
+        <button class="act" onclick='approveProc(${JSON.stringify(c).replace(/'/g,"&#39;")})'>Review</button></div>`).join(''):'<div class="empty">No repeated processes detected yet. Use the agent and complete tasks to build the event log.</div>'}</div>
+    <div class="card"><h3>Approved processes</h3>
+      ${d.definitions.length?d.definitions.map(p=>`<div class="row"><div class="grow">${esc(p.process_name)}<div class="muted small">${esc(p.status)} · ${esc(p.automation_level)}</div></div></div>`).join(''):'<div class="empty">None approved yet.</div>'}</div>`;
+}
+async function approveProc(c){
+  await api('/api/processes/approve',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({process_name:c.process_candidate,trigger:c.project||'',steps:c.event_sequence||''})});
+  renderProcesses();
+}
+
+/* ---------------- Agent Activity (audit) ---------------- */
+async function renderActivity(){
+  const s=document.getElementById('activity');
+  const acts=await api('/api/actions');
+  const rows=acts.map(a=>`<tr>
+     <td>${esc(a.requested_action)}</td><td><code>${esc(a.tool)}</code></td>
+     <td><span class="pill ${a.risk_level==='never'?'red':a.risk_level==='medium'?'amber':'green'}">${esc(a.risk_level)}</span></td>
+     <td>${esc(a.execution_status)}</td><td>${esc(a.approved_by||'—')}</td>
+     <td class="muted small">${a.created_at.slice(0,16)}</td></tr>`).join('');
+  s.innerHTML=`<h2>Agent Activity <span class="muted small">· audit trail</span></h2>
+    <div class="card"><table><tr><th>Action</th><th>Tool</th><th>Risk</th><th>Status</th><th>Approved by</th><th>When</th></tr>
+    ${rows||'<tr><td colspan=6 class="empty">No agent actions yet.</td></tr>'}</table></div>`;
+}
+
+function render(id){
+  ({conversation:renderConversation,today:renderToday,company:renderCompany,
+    memory:renderMemory,processes:renderProcesses,activity:renderActivity}[id])();
+}
+render('conversation');
+</script>
+</body>
+</html>

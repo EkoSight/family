@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Local database
+*.db
+backend/ceo_agent.db
+
+# Env
+.env
