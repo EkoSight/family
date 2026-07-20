@@ -7,12 +7,12 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from .. import briefings, models, permissions, service, tools
+from .. import briefings, content, insights, models, permissions, service, tools
 from ..database import get_db
 
 router = APIRouter(prefix="/api")
@@ -500,6 +500,47 @@ def approve_process(body: ProcessApproveIn, db: Session = Depends(get_db)):
     pd.status = "approved"
     db.commit()
     return {"process_id": pd.process_id, "status": "approved"}
+
+
+# --- Insights: agriculture news + content topics ---------------------------
+@router.get("/news")
+def news(refresh: bool = False):
+    return insights.fetch_news(force=refresh)
+
+
+@router.get("/news/topics")
+def news_topics():
+    return insights.topics()
+
+
+class TopicTaskIn(BaseModel):
+    topic: str
+    angle: Optional[str] = None
+    assigned_to: Optional[str] = None
+    deadline: Optional[str] = None
+
+
+@router.post("/content/topic-task")
+def topic_to_task(body: TopicTaskIn, db: Session = Depends(get_db)):
+    """Turn a suggested content topic into a post task (needs CEO review)."""
+    title = f"Content post: {body.topic}"
+    desc = body.angle or ""
+    return tools.create_task(db, {
+        "title": title, "description": desc,
+        "assigned_to": body.assigned_to, "assigned_by": "Dhiraj",
+        "deadline": body.deadline, "priority": "medium",
+        "approval_required": True, "project": "Soil Didi content"})
+
+
+@router.post("/content/photo")
+async def content_photo(file: UploadFile = File(...)):
+    data = await file.read()
+    if not data:
+        raise HTTPException(400, "empty file")
+    if len(data) > 8 * 1024 * 1024:
+        raise HTTPException(413, "image too large (max 8MB)")
+    mime = file.content_type or "image/jpeg"
+    return content.suggest_from_photo(data, mime)
 
 
 # --- Conversations / event log --------------------------------------------

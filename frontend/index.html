@@ -17,13 +17,21 @@
     --shadow:0 1px 2px rgba(20,26,36,.06),0 8px 24px rgba(20,26,36,.06);
     --radius:16px;
   }
+  /* dark palette — applied by system preference (auto) unless forced light,
+     or forced explicitly with data-mode="dark". */
   @media (prefers-color-scheme: dark){
-    :root{
+    :root:not([data-mode="light"]){
       --bg:#0e1116; --surface:#161b22; --surface2:#1c2230; --line:#262d3a;
       --text:#e8edf4; --muted:#8b97a9; --accent:#5b8cff; --accent-soft:#1b2740;
       --green:#3fb950; --amber:#d29922; --red:#f85149; --chip:#222a37;
       --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 30px rgba(0,0,0,.35);
     }
+  }
+  :root[data-mode="dark"]{
+    --bg:#0e1116; --surface:#161b22; --surface2:#1c2230; --line:#262d3a;
+    --text:#e8edf4; --muted:#8b97a9; --accent:#5b8cff; --accent-soft:#1b2740;
+    --green:#3fb950; --amber:#d29922; --red:#f85149; --chip:#222a37;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 30px rgba(0,0,0,.35);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{margin:0;height:100%}
@@ -209,6 +217,7 @@
         <div><div style="font-weight:700;font-size:15px">CEO Agent</div>
         <div class="muted tiny">Ekosight</div></div></div>
       <div id="sideNav"></div>
+      <button class="navlink" onclick="openAppearance()"><span class="ic">🎨</span>Appearance</button>
       <div class="userbox">
         <div class="avatar" id="uAvatar">?</div>
         <div class="grow" style="flex:1;min-width:0">
@@ -224,6 +233,7 @@
         <div class="logo">E</div>
         <div style="font-weight:700">CEO Agent</div>
         <div class="muted small" id="topTitle" style="margin-left:auto"></div>
+        <button class="mic" style="width:38px;height:38px;font-size:16px" title="Appearance" onclick="openAppearance()">🎨</button>
       </div>
       <main>
         <section id="today" class="screen"></section>
@@ -234,6 +244,7 @@
         <section id="team" class="screen"></section>
         <section id="memory" class="screen"></section>
         <section id="processes" class="screen"></section>
+        <section id="content" class="screen"></section>
         <section id="activity" class="screen"></section>
       </main>
     </div>
@@ -255,14 +266,14 @@ let CURRENT = null;      // current user object
 let COUNTS = {};         // dashboard counts (for badges)
 
 const ICON = {today:'🌅',chat:'💬',mywork:'✅',people:'👥',company:'🏢',team:'📊',
-  memory:'🧠',processes:'🔁',activity:'📜'};
+  memory:'🧠',processes:'🔁',content:'📰',activity:'📜'};
 const LABEL = {today:'Today',chat:'Chat',mywork:'My Work',people:'People',company:'Company',
-  team:'Team',memory:'Memory',processes:'Processes',activity:'Activity'};
+  team:'Team',memory:'Memory',processes:'Processes',content:'Insights',activity:'Activity'};
 // nav per role
-const NAV_CEO = ['today','chat','people','company','team','memory','processes','activity'];
-const NAV_MEMBER = ['mywork','chat','team'];
-const BOTTOM_CEO = ['today','chat','company','team','people'];
-const BOTTOM_MEMBER = ['mywork','chat','team'];
+const NAV_CEO = ['today','chat','content','people','company','team','memory','processes','activity'];
+const NAV_MEMBER = ['mywork','chat','content','team'];
+const BOTTOM_CEO = ['today','chat','content','company','team'];
+const BOTTOM_MEMBER = ['mywork','chat','content','team'];
 
 /* ================= helpers ================= */
 function esc(s){return (s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -273,6 +284,45 @@ async function api(path,opts={}){
   const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});
   if(!r.ok){let m=r.statusText;try{m=(await r.json()).detail||m}catch(e){}throw new Error(m);}
   const ct=r.headers.get('content-type')||'';return ct.includes('json')?r.json():r.text();
+}
+
+/* ================= theme templates ================= */
+const THEMES = {
+  default:{name:'Ocean Blue',   dot:'#3d6fff', aL:'#3d6fff',sL:'#e8eeff', aD:'#5b8cff',sD:'#1b2740'},
+  emerald:{name:'Ekosight Green',dot:'#0f9d58', aL:'#0f9d58',sL:'#e3f5ea', aD:'#3fbf74',sD:'#12301f'},
+  violet: {name:'Indigo',       dot:'#6d5efc', aL:'#6d5efc',sL:'#ece9ff', aD:'#8b7dff',sD:'#241f45'},
+  sunset: {name:'Sunset',       dot:'#f2683c', aL:'#e5561f',sL:'#ffece2', aD:'#ff7d4d',sD:'#3a2016'},
+  teal:   {name:'Teal',         dot:'#0aa2a2', aL:'#0a9a9a',sL:'#dff5f4', aD:'#2fc4c4',sD:'#0f2e2e'},
+  graphite:{name:'Graphite',    dot:'#5b6474', aL:'#4a5568',sL:'#eceef2', aD:'#8b93a6',sD:'#242a34'},
+};
+const PREF={ get:()=>{try{return JSON.parse(localStorage.getItem('ceoPref'))||{}}catch(e){return {}}},
+  set:(p)=>localStorage.setItem('ceoPref',JSON.stringify(p)) };
+function effectiveDark(mode){ if(mode==='dark')return true; if(mode==='light')return false;
+  return window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches; }
+function applyTheme(){
+  const p=PREF.get(); const mode=p.mode||'auto'; const themeKey=p.theme||'default';
+  const root=document.documentElement;
+  if(mode==='auto')root.removeAttribute('data-mode'); else root.setAttribute('data-mode',mode);
+  const t=THEMES[themeKey]||THEMES.default; const dark=effectiveDark(mode);
+  root.style.setProperty('--accent', dark?t.aD:t.aL);
+  root.style.setProperty('--accent-soft', dark?t.sD:t.sL);
+  const meta=document.querySelector('meta[name=theme-color]'); if(meta)meta.content=dark?t.aD:t.aL;
+}
+if(window.matchMedia){window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);}
+applyTheme();  // apply as early as possible
+function setMode(m){const p=PREF.get();p.mode=m;PREF.set(p);applyTheme();openAppearance();}
+function setTheme(k){const p=PREF.get();p.theme=k;PREF.set(p);applyTheme();openAppearance();}
+function openAppearance(){
+  const p=PREF.get(); const mode=p.mode||'auto'; const theme=p.theme||'default';
+  const swatches=Object.entries(THEMES).map(([k,t])=>`
+    <button class="chip-btn" onclick="setTheme('${k}')" style="display:flex;align-items:center;gap:8px;${k===theme?'border-color:var(--accent);border-width:2px':''}">
+      <span style="width:16px;height:16px;border-radius:50%;background:${t.dot};display:inline-block"></span>${t.name}</button>`).join('');
+  const modes=[['auto','Auto'],['light','Light'],['dark','Dark']].map(([m,l])=>`
+    <button class="chip-btn" onclick="setMode('${m}')" style="${m===mode?'border-color:var(--accent);border-width:2px':''}">${l}</button>`).join('');
+  openModal(`<h3>Appearance</h3>
+    <div class="field"><label>Mode</label><div class="chips">${modes}</div></div>
+    <div class="field"><label>Theme template</label><div class="chips">${swatches}</div></div>
+    <button class="btn" onclick="closeModal()">Done</button>`);
 }
 
 /* ================= login ================= */
@@ -536,8 +586,67 @@ async function renderActivity(){
     ${acts.map(a=>`<tr><td>${esc(a.requested_action)}</td><td><code>${esc(a.tool)}</code></td><td><span class="pill ${a.risk_level==='never'?'red':a.risk_level==='medium'?'amber':'green'}">${esc(a.risk_level)}</span></td><td>${esc(a.execution_status)}</td><td>${esc(a.approved_by||'—')}</td><td class="muted tiny">${a.created_at.slice(0,16).replace('T',' ')}</td></tr>`).join('')||'<tr><td colspan=6 class="empty">No actions yet.</td></tr>'}</table></div></div>`;
 }
 
+/* -- Insights: agri news topics + photo → post topics -- */
+async function renderContent(){
+  const s=document.getElementById('content');
+  s.innerHTML=`<div class="pagehead"><h2>Insights</h2><span class="muted small">Agri news · content ideas</span></div>
+    <div class="card"><h3>📸 Suggest post topics from a photo</h3>
+      <p class="muted small" style="margin:0 0 10px">Upload a field/product photo and get post ideas.</p>
+      <div class="btnrow"><label class="btn slim" style="display:inline-block">Choose photo<input type="file" id="photoIn" accept="image/*" style="display:none"></label>
+        <span class="muted small" id="photoName"></span></div>
+      <div id="photoOut"></div></div>
+    <div class="card"><h3>🔥 Prioritised topics for us <button class="btn slim sec" style="float:right" onclick="renderContent()">Refresh</button></h3>
+      <div id="topicsOut"><div class="empty">Loading trending agriculture topics…</div></div></div>
+    <div class="card"><h3>🗞️ Latest agriculture news</h3><div id="newsOut"><div class="empty">Loading…</div></div></div>`;
+  // photo upload
+  const inp=s.querySelector('#photoIn');
+  inp.onchange=async()=>{
+    const f=inp.files[0]; if(!f)return;
+    s.querySelector('#photoName').textContent=f.name;
+    const out=s.querySelector('#photoOut');out.innerHTML='<div class="empty">Analysing photo…</div>';
+    try{
+      const fd=new FormData();fd.append('file',f);
+      const r=await fetch('/api/content/photo',{method:'POST',body:fd});
+      const d=await r.json();
+      out.innerHTML=`<div class="interp" style="margin-top:10px">
+        ${d.scene?`<div class="small" style="margin-bottom:6px"><b>In your photo:</b> ${esc(d.scene)}</div>`:''}
+        ${(d.suggestions||[]).map(x=>`<div class="item"><b>${esc(x.title)}</b>${x.angle?` — <span class="muted small">${esc(x.angle)}</span>`:''}
+          <div class="btnrow"><button class="btn slim" onclick='topicTask(${JSON.stringify({topic:x.title,angle:x.angle}).replace(/'/g,"&#39;")})'>＋ Create post task</button></div></div>`).join('')}
+        <div class="muted tiny" style="margin-top:8px">Analysed by: ${esc(d.analyzed_by||'')}${d.note?' · '+esc(d.note):''}</div></div>`;
+    }catch(e){out.innerHTML=`<div class="empty">Upload failed: ${esc(e.message)}</div>`;}
+  };
+  // topics + news
+  loadTopics();loadNews();
+}
+async function loadTopics(){
+  const box=document.getElementById('topicsOut');
+  try{
+    const d=await api('/api/news/topics');
+    box.innerHTML=(d.online?'':'<div class="muted tiny" style="margin-bottom:6px">⚠ Offline — showing sample topics. Live news appears when deployed.</div>')+
+      d.topics.map(t=>`<div class="row"><div class="grow"><div class="t">${esc(t.topic)} ${t.story_count?`<span class="pill blue">${t.story_count} stories</span>`:''}</div>
+        <div class="muted tiny">${esc(t.suggested_angle)}</div>
+        ${t.headlines.length?`<div class="muted tiny" style="margin-top:4px">${t.headlines.map(h=>h.url&&h.url!=='#'?`<a href="${esc(h.url)}" target="_blank" rel="noopener">${esc(h.title.slice(0,70))}</a>`:esc(h.title.slice(0,70))).join(' · ')}</div>`:''}</div>
+        <button class="btn slim" onclick='topicTask(${JSON.stringify({topic:t.topic,angle:t.suggested_angle}).replace(/'/g,"&#39;")})'>＋ Post task</button></div>`).join('');
+  }catch(e){box.innerHTML=`<div class="empty">${esc(e.message)}</div>`;}
+}
+async function loadNews(){
+  const box=document.getElementById('newsOut');
+  try{
+    const d=await api('/api/news');
+    box.innerHTML=d.items.map(n=>`<div class="row"><div class="grow"><div class="t">${n.url&&n.url!=='#'?`<a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a>`:esc(n.title)}</div>
+      <div class="muted tiny">${esc(n.source||'')}${n.region?' · '+esc(n.region):''}${n.matched&&n.matched.length?' · '+n.matched.slice(0,3).map(esc).join(', '):''}</div></div>
+      ${n.relevance?`<span class="pill ${n.relevance>=10?'green':n.relevance>=5?'amber':''}">rel ${n.relevance}</span>`:''}</div>`).join('')||'<div class="empty">No news.</div>';
+  }catch(e){box.innerHTML=`<div class="empty">${esc(e.message)}</div>`;}
+}
+async function topicTask(t){
+  await api('/api/content/topic-task',{method:'POST',body:JSON.stringify({topic:t.topic,angle:t.angle,assigned_to:'Priya'})});
+  toast('Post task created & sent for your approval');
+}
+function toast(msg){const el2=el(`<div style="position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:20px;z-index:60;font-size:13px;box-shadow:var(--shadow)">${esc(msg)}</div>`);document.body.appendChild(el2);setTimeout(()=>el2.remove(),2600);}
+
 const RENDER={today:renderToday,chat:renderChat,mywork:renderMyWork,people:renderPeople,
-  company:renderCompany,team:renderTeam,memory:renderMemory,processes:renderProcesses,activity:renderActivity};
+  company:renderCompany,team:renderTeam,memory:renderMemory,processes:renderProcesses,
+  content:renderContent,activity:renderActivity};
 
 /* ================= modals ================= */
 function openModal(html){document.getElementById('modalRoot').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`;}

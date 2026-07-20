@@ -64,6 +64,20 @@ assigns tasks from a form or from chat.
 > Auth is a lightweight email identify for the MVP — production swaps in Google
 > Workspace login. No passwords are stored.
 
+### Insights & content (new)
+- **Dynamic theme templates** — pick a colour template (Ocean Blue, Ekosight
+  Green, Indigo, Sunset, Teal, Graphite) and Auto / Light / Dark mode from the
+  Appearance panel; the choice persists per device.
+- **Agriculture news, prioritised for us** — pulls Indian + global agriculture /
+  agritech news, scores every story by closeness to Ekosight's work (soil
+  health, IoT, precision agriculture, schemes) and suggests the top **content
+  topics**. News is fetched live when the host has internet (e.g. on Cloud Run);
+  offline it shows a curated fallback so the screen always works.
+- **Photo → post topics** — upload a field/product photo and get post-topic
+  suggestions, each turnable into an approval-gated post task. With
+  `LLM_PROVIDER=gemini` (or `claude`) + key it analyses the actual image;
+  without one it falls back to a clearly-labelled heuristic from trending topics.
+
 ## Run it locally (zero external dependencies)
 
 ```bash
@@ -109,7 +123,9 @@ Workspace MCP integrations.
 `GET /api/{conversations,events}` · `GET /health` ·
 `POST /api/login` · `POST/PATCH /api/people` · `POST /api/people/{id}/{activate,deactivate}` ·
 `POST /api/tasks` · `POST /api/tasks/{id}/{accept,decline,progress,blocker,unblock,complete,approve}` ·
-`GET /api/my/tasks` · `GET /api/team/workload`.
+`GET /api/my/tasks` · `GET /api/team/workload` ·
+`GET /api/news` · `GET /api/news/topics` · `POST /api/content/photo` ·
+`POST /api/content/topic-task`.
 
 ### Install as a mobile app
 Open the site on your phone → browser menu → **Add to Home Screen**. It launches
