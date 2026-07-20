@@ -24,17 +24,35 @@ _VISION_PROMPT = (
 
 def suggest_from_photo(image_bytes: bytes, mime: str) -> dict:
     provider = config.LLM_PROVIDER
-    if provider == "claude" and config.ANTHROPIC_API_KEY:
-        try:
+    try:
+        if provider == "openai" and config.OPENAI_API_KEY:
+            return _openai_vision(image_bytes, mime)
+        if provider == "claude" and config.ANTHROPIC_API_KEY:
             return _claude_vision(image_bytes, mime)
-        except Exception:
-            pass
-    elif provider == "gemini" and config.GEMINI_API_KEY:
-        try:
+        if provider == "gemini" and config.GEMINI_API_KEY:
             return _gemini_vision(image_bytes, mime)
-        except Exception:
-            pass
+    except Exception:
+        pass
     return _heuristic()
+
+
+def _openai_vision(image_bytes: bytes, mime: str) -> dict:
+    from openai import OpenAI  # type: ignore
+
+    client = OpenAI(api_key=config.OPENAI_API_KEY)
+    b64 = base64.standard_b64encode(image_bytes).decode()
+    resp = client.chat.completions.create(
+        model=config.OPENAI_MODEL,
+        messages=[{"role": "user", "content": [
+            {"type": "text", "text": _VISION_PROMPT},
+            {"type": "image_url",
+             "image_url": {"url": f"data:{mime};base64,{b64}"}},
+        ]}],
+        temperature=0.4, max_tokens=700,
+    )
+    parsed = _parse_text(resp.choices[0].message.content)
+    parsed["analyzed_by"] = "chatgpt vision"
+    return parsed
 
 
 def _parse_text(text: str) -> dict:

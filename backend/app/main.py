@@ -41,8 +41,14 @@ def _startup() -> None:
 
 @app.get("/health")
 def health():
+    key_present = {
+        "openai": bool(config.OPENAI_API_KEY),
+        "gemini": bool(config.GEMINI_API_KEY),
+        "claude": bool(config.ANTHROPIC_API_KEY),
+    }.get(config.LLM_PROVIDER, config.LLM_PROVIDER == "none")
     return {"status": "ok", "company": config.COMPANY_NAME,
-            "llm_provider": config.LLM_PROVIDER}
+            "llm_provider": config.LLM_PROVIDER,
+            "llm_key_present": key_present}
 
 
 # Serve the single-page dashboard --------------------------------------------

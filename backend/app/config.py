@@ -4,10 +4,12 @@ Environment variables (all optional for local dev):
   DATABASE_URL   SQLAlchemy URL. Defaults to a local SQLite file so the app
                  runs with zero external dependencies. Point this at Postgres
                  in production, e.g. postgresql+psycopg://user:pass@host/db
-  LLM_PROVIDER   "none" (default, deterministic rule parser), "gemini" or
-                 "claude". When set to a real provider the matching API key
-                 below must be present, otherwise the app falls back to rules.
-  GEMINI_API_KEY / VERTEX_* for Gemini via Vertex AI.
+  LLM_PROVIDER   "none" (default, deterministic rule parser), "openai",
+                 "gemini" or "claude". When set to a real provider the matching
+                 API key below must be present, otherwise the app falls back to
+                 the rule parser (nothing breaks if the key is missing).
+  OPENAI_API_KEY for ChatGPT (GPT-4o). OPENAI_MODEL optional (default gpt-4o).
+  GEMINI_API_KEY for Gemini via Vertex AI.
   ANTHROPIC_API_KEY for Claude.
   CEO_NAME       Display name used in briefings. Defaults to "Dhiraj".
 """
@@ -22,6 +24,8 @@ DATABASE_URL = os.environ.get(
 )
 
 LLM_PROVIDER = os.environ.get("LLM_PROVIDER", "none").lower()
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+OPENAI_MODEL = os.environ.get("OPENAI_MODEL", "gpt-4o")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 

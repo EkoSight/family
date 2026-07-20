@@ -182,7 +182,7 @@ def _rule_interpret(message: str, people_names: list[str]) -> Interpretation:
 
 def interpret(message: str, people_names: list[str]) -> Interpretation:
     """Public entry point. Tries the configured LLM, falls back to rules."""
-    if config.LLM_PROVIDER in ("gemini", "claude"):
+    if config.LLM_PROVIDER in ("openai", "gemini", "claude"):
         try:
             return _llm_interpret(message, people_names)
         except Exception:  # noqa: BLE001 — any failure -> deterministic fallback
@@ -206,7 +206,18 @@ def _llm_interpret(message: str, people_names: list[str]) -> Interpretation:
     prompt = (f"Known people: {', '.join(people_names)}\n"
               f"CEO message: {message}\n\nReturn the JSON array.")
     raw = None
-    if config.LLM_PROVIDER == "claude" and config.ANTHROPIC_API_KEY:
+    if config.LLM_PROVIDER == "openai" and config.OPENAI_API_KEY:
+        from openai import OpenAI  # type: ignore
+
+        client = OpenAI(api_key=config.OPENAI_API_KEY)
+        resp = client.chat.completions.create(
+            model=config.OPENAI_MODEL,
+            messages=[{"role": "system", "content": _SYSTEM},
+                      {"role": "user", "content": prompt}],
+            temperature=0,
+        )
+        raw = resp.choices[0].message.content
+    elif config.LLM_PROVIDER == "claude" and config.ANTHROPIC_API_KEY:
         import anthropic  # type: ignore
 
         client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)

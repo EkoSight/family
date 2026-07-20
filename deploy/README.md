@@ -74,17 +74,23 @@ That's it — tables are auto-created and seeded on first boot.
 
 ---
 
-## Optional: turn on the Gemini brain
+## Optional: turn on the AI brain (ChatGPT / Gemini / Claude)
 
-By default the agent uses the offline rule parser. To use Gemini via Vertex AI,
-redeploy with:
+By default the agent uses the offline rule parser. To use **ChatGPT (GPT-4o)**
+for both understanding messages and analysing uploaded photos, redeploy with:
 
 ```bash
-LLM_PROVIDER=gemini GEMINI_API_KEY=your-key   # ...plus the flags above
+LLM_PROVIDER=openai OPENAI_API_KEY=sk-...   # ...plus the flags above
 ```
 
-(Or `LLM_PROVIDER=claude` + `ANTHROPIC_API_KEY`.) The app falls back to the rule
-parser automatically if the key is missing or a call fails.
+(Or `LLM_PROVIDER=gemini` + `GEMINI_API_KEY`, or `LLM_PROVIDER=claude` +
+`ANTHROPIC_API_KEY`.) The app falls back to the rule parser automatically if the
+key is missing or a call fails, so nothing breaks.
+
+**Keep the key secret.** For production, store it in Secret Manager and pass it
+with `--set-secrets OPENAI_API_KEY=openai-key:latest` instead of inline. The
+`/health` endpoint reports `llm_provider` and whether a key is present (never the
+key itself).
 
 ---
 
