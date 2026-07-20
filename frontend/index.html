@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#4f8cff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<title>Ekosight CEO Agent</title>
+<style>
+  :root{
+    --bg:#f5f7fb; --surface:#ffffff; --surface2:#f0f3f8; --line:#e3e8f0;
+    --text:#141a24; --muted:#63708a; --accent:#3d6fff; --accent-soft:#e8eeff;
+    --green:#0f9d58; --amber:#e0920b; --red:#e5484d; --chip:#eef1f7;
+    --shadow:0 1px 2px rgba(20,26,36,.06),0 8px 24px rgba(20,26,36,.06);
+    --radius:16px;
+  }
+  /* dark palette — applied by system preference (auto) unless forced light,
+     or forced explicitly with data-mode="dark". */
+  @media (prefers-color-scheme: dark){
+    :root:not([data-mode="light"]){
+      --bg:#0e1116; --surface:#161b22; --surface2:#1c2230; --line:#262d3a;
+      --text:#e8edf4; --muted:#8b97a9; --accent:#5b8cff; --accent-soft:#1b2740;
+      --green:#3fb950; --amber:#d29922; --red:#f85149; --chip:#222a37;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-mode="dark"]{
+    --bg:#0e1116; --surface:#161b22; --surface2:#1c2230; --line:#262d3a;
+    --text:#e8edf4; --muted:#8b97a9; --accent:#5b8cff; --accent-soft:#1b2740;
+    --green:#3fb950; --amber:#d29922; --red:#f85149; --chip:#222a37;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,Arial,sans-serif;
+    background:var(--bg);color:var(--text);font-size:15px;line-height:1.45;
+    -webkit-font-smoothing:antialiased}
+  button{font-family:inherit;cursor:pointer}
+  .hidden{display:none!important}
+  .muted{color:var(--muted)} .small{font-size:13px} .tiny{font-size:11.5px}
+  h1,h2,h3{margin:0}
+  input,select,textarea{font-family:inherit;font-size:15px;color:var(--text);
+    background:var(--surface2);border:1px solid var(--line);border-radius:10px;
+    padding:11px 13px;width:100%}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);border-color:transparent}
+  a{color:var(--accent)}
+
+  /* ---- Login ---- */
+  #login{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px}
+  .login-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;
+    box-shadow:var(--shadow);padding:30px;max-width:400px;width:100%}
+  .brand{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .brand .logo{width:42px;height:42px;border-radius:12px;background:var(--accent);
+    display:grid;place-items:center;color:#fff;font-weight:800;font-size:20px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}
+  .chip-btn{background:var(--chip);border:1px solid var(--line);border-radius:20px;
+    padding:7px 13px;font-size:13px;color:var(--text)}
+  .chip-btn:hover{border-color:var(--accent)}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:11px;
+    padding:12px 16px;font-size:15px;font-weight:600;width:100%}
+  .btn.sec{background:var(--surface2);color:var(--text);border:1px solid var(--line)}
+  .btn.ok{background:var(--green)} .btn.danger{background:var(--red)}
+  .btn.slim{width:auto;padding:8px 14px;font-size:13.5px}
+  .err{color:var(--red);font-size:13px;margin-top:8px;min-height:16px}
+
+  /* ---- App shell ---- */
+  #app{display:none;min-height:100%}
+  .layout{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+  aside{background:var(--surface);border-right:1px solid var(--line);
+    padding:16px 12px;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:4px}
+  aside .brand{padding:6px 8px 14px}
+  .navlink{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;
+    color:var(--muted);border:none;background:none;width:100%;text-align:left;font-size:14.5px}
+  .navlink .ic{width:20px;text-align:center;font-size:17px}
+  .navlink.active{background:var(--accent-soft);color:var(--accent);font-weight:600}
+  .navlink:hover{color:var(--text)}
+  .navlink .badge{margin-left:auto;background:var(--red);color:#fff;border-radius:10px;
+    font-size:11px;padding:1px 7px;font-weight:700}
+  .userbox{margin-top:auto;border-top:1px solid var(--line);padding-top:12px;
+    display:flex;align-items:center;gap:10px}
+  .avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;
+    display:grid;place-items:center;font-weight:700;font-size:14px;flex:none}
+  main{padding:22px;max-width:1000px;width:100%;margin:0 auto}
+  .topbar{display:none}
+
+  /* ---- Cards & components ---- */
+  .screen{display:none;animation:fade .2s ease}
+  .screen.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .pagehead{display:flex;align-items:center;gap:12px;margin-bottom:18px;flex-wrap:wrap}
+  .pagehead h2{font-size:20px;font-weight:700}
+  .grid{display:grid;gap:14px}
+  .kpis{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:15px 16px;box-shadow:var(--shadow)}
+  .kpi .n{font-size:30px;font-weight:800;letter-spacing:-1px}
+  .kpi .l{color:var(--muted);font-size:12.5px;margin-top:3px}
+  .kpi.a .n{color:var(--accent)} .kpi.w .n{color:var(--amber)} .kpi.r .n{color:var(--red)}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;margin-bottom:14px;box-shadow:var(--shadow)}
+  .card h3{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;
+    font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+  .row{display:flex;gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+  .row:last-child{border-bottom:none}
+  .row .grow{flex:1;min-width:0}
+  .row .grow .t{font-weight:500}
+  .pill{font-size:11.5px;padding:3px 9px;border-radius:20px;background:var(--chip);
+    color:var(--muted);white-space:nowrap;font-weight:600}
+  .pill.high,.pill.red,.pill.overdue{background:rgba(229,72,77,.13);color:var(--red)}
+  .pill.green,.pill.done{background:rgba(15,157,88,.14);color:var(--green)}
+  .pill.amber,.pill.medium{background:rgba(224,146,11,.15);color:var(--amber)}
+  .pill.blue{background:var(--accent-soft);color:var(--accent)}
+  .empty{color:var(--muted);padding:22px;text-align:center;font-size:14px}
+  .bar{height:7px;background:var(--surface2);border-radius:6px;overflow:hidden;min-width:70px}
+  .bar>span{display:block;height:100%;background:var(--accent)}
+  table{width:100%;border-collapse:collapse}
+  .tablewrap{overflow-x:auto}
+  th,td{text-align:left;padding:10px 10px;border-bottom:1px solid var(--line);font-size:13.5px;white-space:nowrap}
+  th{color:var(--muted);font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.4px}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  code{background:var(--surface2);padding:1px 6px;border-radius:5px;font-size:12.5px}
+
+  /* ---- Chat ---- */
+  .chatwrap{display:flex;flex-direction:column;height:calc(100vh - 150px)}
+  .stream{flex:1;overflow-y:auto;padding:4px;display:flex;flex-direction:column;gap:4px}
+  .msg{margin:6px 0;max-width:86%}
+  .msg.me{align-self:flex-end}
+  .msg .bubble{display:inline-block;padding:11px 15px;border-radius:16px;
+    background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+  .msg.me .bubble{background:var(--accent);border-color:var(--accent);color:#fff}
+  .composer{display:flex;gap:9px;padding-top:12px;border-top:1px solid var(--line);align-items:center}
+  .composer input{flex:1;border-radius:22px;padding:12px 16px}
+  .mic{width:46px;height:46px;flex:none;border-radius:50%;border:1px solid var(--line);
+    background:var(--surface2);color:var(--text);font-size:19px;display:grid;place-items:center}
+  .mic.rec{background:var(--red);border-color:var(--red);color:#fff;animation:pulse 1s infinite}
+  @keyframes pulse{50%{opacity:.55}}
+  .sendb{width:46px;height:46px;flex:none;border-radius:50%;background:var(--accent);color:#fff;
+    border:none;font-size:18px}
+  .interp{background:var(--surface2);border:1px solid var(--line);border-radius:13px;
+    padding:11px 13px;margin-top:8px}
+  .interp .item{padding:7px 0;border-bottom:1px solid var(--line)}
+  .interp .item:last-child{border-bottom:none}
+
+  /* ---- FAB ---- */
+  .fab{position:fixed;right:22px;bottom:22px;width:56px;height:56px;border-radius:18px;
+    background:var(--accent);color:#fff;border:none;font-size:26px;box-shadow:var(--shadow);z-index:30}
+
+  /* ---- Modal ---- */
+  .modal-bg{position:fixed;inset:0;background:rgba(8,12,20,.55);display:flex;
+    align-items:flex-end;justify-content:center;z-index:40;padding:0}
+  .modal{background:var(--surface);border:1px solid var(--line);border-radius:22px 22px 0 0;
+    width:100%;max-width:520px;padding:22px;max-height:92vh;overflow-y:auto}
+  .modal h3{font-size:18px;margin-bottom:14px}
+  .field{margin-bottom:12px} .field label{display:block;font-size:12.5px;color:var(--muted);
+    margin-bottom:5px;font-weight:600}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+  /* ---- Bottom nav (mobile) ---- */
+  .botnav{display:none}
+
+  /* ---- Responsive ---- */
+  @media (max-width:820px){
+    .layout{grid-template-columns:1fr}
+    aside{display:none}
+    .topbar{display:flex;align-items:center;gap:12px;padding:12px 16px;
+      background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;
+      padding-top:max(12px,env(safe-area-inset-top))}
+    .topbar .logo{width:32px;height:32px;border-radius:9px;background:var(--accent);color:#fff;
+      display:grid;place-items:center;font-weight:800}
+    main{padding:16px 14px 90px}
+    .botnav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--surface);
+      border-top:1px solid var(--line);z-index:30;padding-bottom:env(safe-area-inset-bottom)}
+    .botnav button{flex:1;background:none;border:none;color:var(--muted);padding:9px 2px 8px;
+      display:flex;flex-direction:column;align-items:center;gap:3px;font-size:10.5px;position:relative}
+    .botnav button.active{color:var(--accent)}
+    .botnav .ic{font-size:20px}
+    .botnav .badge{position:absolute;top:4px;right:calc(50% - 20px);background:var(--red);color:#fff;
+      border-radius:9px;font-size:9px;padding:0 5px;font-weight:700}
+    .fab{bottom:78px}
+    .modal{border-radius:22px 22px 0 0}
+    .two{grid-template-columns:1fr}
+    .chatwrap{height:calc(100vh - 210px)}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+  }
+  @media (min-width:821px){
+    .modal-bg{align-items:center}
+    .modal{border-radius:22px}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN ============ -->
+<div id="login">
+  <div class="login-card">
+    <div class="brand"><div class="logo">E</div>
+      <div><h1 style="font-size:18px">Ekosight CEO Agent</h1>
+      <div class="muted small">Your company operating agent</div></div></div>
+    <p class="muted small" style="margin:14px 0 4px">Sign in with your work email.</p>
+    <input id="loginEmail" type="email" placeholder="you@ekosight.com" autocomplete="email">
+    <div class="err" id="loginErr"></div>
+    <button class="btn" id="loginBtn">Continue</button>
+    <div class="muted tiny" style="margin:16px 0 4px">Quick sign-in (demo):</div>
+    <div class="chips" id="loginChips"></div>
+    <div class="muted tiny">Production uses Google Workspace login. This MVP identifies you by email.</div>
+  </div>
+</div>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <div class="layout">
+    <aside>
+      <div class="brand"><div class="logo">E</div>
+        <div><div style="font-weight:700;font-size:15px">CEO Agent</div>
+        <div class="muted tiny">Ekosight</div></div></div>
+      <div id="sideNav"></div>
+      <button class="navlink" onclick="openAppearance()"><span class="ic">🎨</span>Appearance</button>
+      <div class="userbox">
+        <div class="avatar" id="uAvatar">?</div>
+        <div class="grow" style="flex:1;min-width:0">
+          <div class="small" id="uName" style="font-weight:600"></div>
+          <div class="muted tiny" id="uRole"></div>
+        </div>
+        <button class="navlink" style="width:auto;padding:8px" title="Sign out" onclick="logout()">⏻</button>
+      </div>
+    </aside>
+
+    <div>
+      <div class="topbar">
+        <div class="logo">E</div>
+        <div style="font-weight:700">CEO Agent</div>
+        <div class="muted small" id="topTitle" style="margin-left:auto"></div>
+        <button class="mic" style="width:38px;height:38px;font-size:16px" title="Appearance" onclick="openAppearance()">🎨</button>
+      </div>
+      <main>
+        <section id="today" class="screen"></section>
+        <section id="chat" class="screen"></section>
+        <section id="mywork" class="screen"></section>
+        <section id="people" class="screen"></section>
+        <section id="company" class="screen"></section>
+        <section id="team" class="screen"></section>
+        <section id="memory" class="screen"></section>
+        <section id="processes" class="screen"></section>
+        <section id="content" class="screen"></section>
+        <section id="activity" class="screen"></section>
+      </main>
+    </div>
+  </div>
+
+  <button class="fab hidden" id="fab" title="New task" onclick="openTaskModal()">＋</button>
+  <div class="botnav" id="botNav"></div>
+</div>
+
+<div id="modalRoot"></div>
+
+<script>
+/* ================= state ================= */
+const store = {
+  get user(){ try{return JSON.parse(localStorage.getItem('ceoUser'))}catch(e){return null} },
+  set user(u){ u?localStorage.setItem('ceoUser',JSON.stringify(u)):localStorage.removeItem('ceoUser'); }
+};
+let CURRENT = null;      // current user object
+let COUNTS = {};         // dashboard counts (for badges)
+
+const ICON = {today:'🌅',chat:'💬',mywork:'✅',people:'👥',company:'🏢',team:'📊',
+  memory:'🧠',processes:'🔁',content:'📰',activity:'📜'};
+const LABEL = {today:'Today',chat:'Chat',mywork:'My Work',people:'People',company:'Company',
+  team:'Team',memory:'Memory',processes:'Processes',content:'Insights',activity:'Activity'};
+// nav per role
+const NAV_CEO = ['today','chat','content','people','company','team','memory','processes','activity'];
+const NAV_MEMBER = ['mywork','chat','content','team'];
+const BOTTOM_CEO = ['today','chat','content','company','team'];
+const BOTTOM_MEMBER = ['mywork','chat','content','team'];
+
+/* ================= helpers ================= */
+function esc(s){return (s??'').toString().replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function el(h){const d=document.createElement('div');d.innerHTML=h.trim();return d.firstElementChild;}
+function initials(n){return (n||'?').split(/\s+/).map(x=>x[0]).slice(0,2).join('').toUpperCase();}
+function todayStr(){return new Date().toISOString().slice(0,10);}
+async function api(path,opts={}){
+  const r=await fetch(path,{headers:{'Content-Type':'application/json'},...opts});
+  if(!r.ok){let m=r.statusText;try{m=(await r.json()).detail||m}catch(e){}throw new Error(m);}
+  const ct=r.headers.get('content-type')||'';return ct.includes('json')?r.json():r.text();
+}
+
+/* ================= theme templates ================= */
+const THEMES = {
+  default:{name:'Ocean Blue',   dot:'#3d6fff', aL:'#3d6fff',sL:'#e8eeff', aD:'#5b8cff',sD:'#1b2740'},
+  emerald:{name:'Ekosight Green',dot:'#0f9d58', aL:'#0f9d58',sL:'#e3f5ea', aD:'#3fbf74',sD:'#12301f'},
+  violet: {name:'Indigo',       dot:'#6d5efc', aL:'#6d5efc',sL:'#ece9ff', aD:'#8b7dff',sD:'#241f45'},
+  sunset: {name:'Sunset',       dot:'#f2683c', aL:'#e5561f',sL:'#ffece2', aD:'#ff7d4d',sD:'#3a2016'},
+  teal:   {name:'Teal',         dot:'#0aa2a2', aL:'#0a9a9a',sL:'#dff5f4', aD:'#2fc4c4',sD:'#0f2e2e'},
+  graphite:{name:'Graphite',    dot:'#5b6474', aL:'#4a5568',sL:'#eceef2', aD:'#8b93a6',sD:'#242a34'},
+};
+const PREF={ get:()=>{try{return JSON.parse(localStorage.getItem('ceoPref'))||{}}catch(e){return {}}},
+  set:(p)=>localStorage.setItem('ceoPref',JSON.stringify(p)) };
+function effectiveDark(mode){ if(mode==='dark')return true; if(mode==='light')return false;
+  return window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches; }
+function applyTheme(){
+  const p=PREF.get(); const mode=p.mode||'auto'; const themeKey=p.theme||'default';
+  const root=document.documentElement;
+  if(mode==='auto')root.removeAttribute('data-mode'); else root.setAttribute('data-mode',mode);
+  const t=THEMES[themeKey]||THEMES.default; const dark=effectiveDark(mode);
+  root.style.setProperty('--accent', dark?t.aD:t.aL);
+  root.style.setProperty('--accent-soft', dark?t.sD:t.sL);
+  const meta=document.querySelector('meta[name=theme-color]'); if(meta)meta.content=dark?t.aD:t.aL;
+}
+if(window.matchMedia){window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);}
+applyTheme();  // apply as early as possible
+function setMode(m){const p=PREF.get();p.mode=m;PREF.set(p);applyTheme();openAppearance();}
+function setTheme(k){const p=PREF.get();p.theme=k;PREF.set(p);applyTheme();openAppearance();}
+function openAppearance(){
+  const p=PREF.get(); const mode=p.mode||'auto'; const theme=p.theme||'default';
+  const swatches=Object.entries(THEMES).map(([k,t])=>`
+    <button class="chip-btn" onclick="setTheme('${k}')" style="display:flex;align-items:center;gap:8px;${k===theme?'border-color:var(--accent);border-width:2px':''}">
+      <span style="width:16px;height:16px;border-radius:50%;background:${t.dot};display:inline-block"></span>${t.name}</button>`).join('');
+  const modes=[['auto','Auto'],['light','Light'],['dark','Dark']].map(([m,l])=>`
+    <button class="chip-btn" onclick="setMode('${m}')" style="${m===mode?'border-color:var(--accent);border-width:2px':''}">${l}</button>`).join('');
+  openModal(`<h3>Appearance</h3>
+    <div class="field"><label>Mode</label><div class="chips">${modes}</div></div>
+    <div class="field"><label>Theme template</label><div class="chips">${swatches}</div></div>
+    <button class="btn" onclick="closeModal()">Done</button>`);
+}
+
+/* ================= login ================= */
+async function bootLogin(){
+  try{
+    const people=await api('/api/people');
+    const chips=document.getElementById('loginChips');
+    chips.innerHTML='';
+    people.filter(p=>p.email).forEach(p=>{
+      const b=el(`<button class="chip-btn">${esc(p.name)}</button>`);
+      b.onclick=()=>doLogin(p.email);
+      chips.appendChild(b);
+    });
+  }catch(e){/* server maybe still starting */}
+}
+async function doLogin(email){
+  const err=document.getElementById('loginErr');err.textContent='';
+  try{
+    const u=await api('/api/login',{method:'POST',body:JSON.stringify({email})});
+    store.user=u;CURRENT=u;enterApp();
+  }catch(e){err.textContent=e.message;}
+}
+document.getElementById('loginBtn').onclick=()=>{
+  const v=document.getElementById('loginEmail').value.trim();
+  if(v)doLogin(v);
+};
+document.getElementById('loginEmail').addEventListener('keydown',e=>{if(e.key==='Enter')document.getElementById('loginBtn').click();});
+function logout(){store.user=null;location.reload();}
+
+/* ================= shell ================= */
+function isCEO(){return CURRENT && (CURRENT.permission_level==='ceo'||CURRENT.permission_level==='manager');}
+function navFor(){return isCEO()?NAV_CEO:NAV_MEMBER;}
+function bottomFor(){return isCEO()?BOTTOM_CEO:BOTTOM_MEMBER;}
+
+function buildNav(){
+  const side=document.getElementById('sideNav');side.innerHTML='';
+  navFor().forEach(id=>{
+    const b=el(`<button class="navlink" data-id="${id}"><span class="ic">${ICON[id]}</span>${LABEL[id]}<span class="badge hidden" data-badge="${id}"></span></button>`);
+    b.onclick=()=>go(id);side.appendChild(b);
+  });
+  const bot=document.getElementById('botNav');bot.innerHTML='';
+  bottomFor().forEach(id=>{
+    const b=el(`<button data-id="${id}"><span class="ic">${ICON[id]}</span>${LABEL[id]}<span class="badge hidden" data-badge2="${id}"></span></button>`);
+    b.onclick=()=>go(id);bot.appendChild(b);
+  });
+}
+let CURRENT_SCREEN=null;
+function go(id){
+  CURRENT_SCREEN=id;
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
+  document.querySelectorAll('.navlink').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
+  document.querySelectorAll('.botnav button').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
+  document.getElementById('topTitle').textContent=LABEL[id];
+  document.getElementById('fab').classList.toggle('hidden', !(isCEO() && ['today','company','people'].includes(id)));
+  RENDER[id]();
+}
+function enterApp(){
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('uName').textContent=CURRENT.name;
+  document.getElementById('uRole').textContent=CURRENT.designation||CURRENT.permission_level;
+  document.getElementById('uAvatar').textContent=initials(CURRENT.name);
+  buildNav();
+  refreshBadges();
+  go(navFor()[0]);
+}
+async function refreshBadges(){
+  try{
+    COUNTS=await api('/api/counts');
+    const n=COUNTS.needs_attention||0;
+    document.querySelectorAll('[data-badge="today"],[data-badge2="today"]').forEach(b=>{
+      if(n>0){b.textContent=n;b.classList.remove('hidden');}else b.classList.add('hidden');
+    });
+  }catch(e){}
+}
+
+/* ================= renderers ================= */
+const taskRow=(t,actions='')=>`
+  <div class="row"><div class="grow"><div class="t">${esc(t.title)}</div>
+    <div class="muted tiny">${esc(t.assigned_to||'Unassigned')}${t.project?' · '+esc(t.project):''}${t.blocked?' · <span style="color:var(--red)">⚠ '+esc(t.blocker_reason||'blocked')+'</span>':''}</div>
+    ${actions}</div>
+    ${t.deadline?`<span class="pill ${t.deadline<todayStr()&&t.status!=='done'?'overdue':''}">${t.deadline}</span>`:''}
+    <span class="pill ${t.priority}">${t.priority}</span></div>`;
+
+/* -- Today (CEO) -- */
+async function renderToday(){
+  const s=document.getElementById('today');s.innerHTML='<div class="empty">Loading…</div>';
+  const d=await api('/api/briefing/morning');const c=d.counts;
+  const kpi=(cls,n,l)=>`<div class="kpi ${cls}"><div class="n">${n}</div><div class="l">${l}</div></div>`;
+  s.innerHTML=`
+    <div class="pagehead"><h2>${esc(d.greeting)}</h2><span class="muted small">${d.date}</span>
+      <button class="btn slim" style="margin-left:auto" onclick="loadBriefing('evening')">Evening review</button></div>
+    <div class="grid kpis" style="margin-bottom:16px">
+      ${kpi('a',c.needs_attention,'Needs Attention')}${kpi('w',c.needs_approval,'Needs Approval')}
+      ${kpi('r',c.overdue,'Overdue')}${kpi('r',c.blocked,'Blocked')}
+      ${kpi('',c.waiting_for_others,'Waiting on Others')}${kpi('',c.upcoming_meetings,'Meetings')}
+      ${kpi('',c.processes_detected,'Processes')}</div>
+    <div class="card"><h3>🔥 Today's priorities</h3>${d.todays_priorities.map(t=>taskRow(t)).join('')||'<div class="empty">All clear.</div>'}</div>
+    <div class="card"><h3>🤝 Your commitments</h3>${d.your_commitments.map(x=>`<div class="row"><div class="grow"><div class="t">${esc(x.text)}</div><div class="muted tiny">to ${esc(x.made_to||'—')}</div></div>${x.deadline?`<span class="pill">${x.deadline}</span>`:''}</div>`).join('')||'<div class="empty">None.</div>'}</div>
+    <div class="card"><h3>⏳ Waiting for others</h3>${d.waiting_for_others.map(t=>taskRow(t)).join('')||'<div class="empty">None.</div>'}</div>
+    <div class="card"><h3>📈 Project health</h3>${d.major_project_health.map(p=>`<div class="row"><div class="grow"><div class="t">${esc(p.name)}</div><div class="bar" style="margin-top:6px"><span style="width:${p.progress}%"></span></div></div><span class="pill ${p.health==='green'?'green':p.health==='red'?'red':'amber'}">${p.health}</span></div>`).join('')||'<div class="empty">None.</div>'}</div>
+    <div class="card"><h3>💡 Recommendations</h3>${d.recommendations.map(r=>`<div class="row"><div class="grow">${esc(r)}</div></div>`).join('')}</div>`;
+}
+async function loadBriefing(kind){
+  const d=await api('/api/briefing/'+kind);
+  const body=(kind==='evening')?`
+    <div class="card"><h3>✅ Completed today</h3>${(d.completed_today||[]).map(t=>taskRow(t)).join('')||'<div class="empty">Nothing marked done yet.</div>'}</div>
+    <div class="card"><h3>🕗 Still open (due)</h3>${(d.still_open||[]).map(t=>taskRow(t)).join('')||'<div class="empty">Clear.</div>'}</div>
+    <div class="card"><h3>💡 Recommendations</h3>${d.recommendations.map(r=>`<div class="row"><div class="grow">${esc(r)}</div></div>`).join('')}</div>`:'';
+  openModal(`<h3>${esc(d.greeting)}</h3><div class="muted small" style="margin-bottom:10px">${d.date}</div>${body}<button class="btn sec" onclick="closeModal()">Close</button>`);
+}
+
+/* -- Chat -- */
+let chatEls=[];
+function renderChat(){
+  const s=document.getElementById('chat');
+  s.innerHTML=`<div class="chatwrap"><div class="stream" id="stream"></div>
+    <div class="composer"><button class="mic" id="mic" title="Hold to talk">🎙️</button>
+      <input id="msg" placeholder="Message your agent…" autocomplete="off">
+      <button class="sendb" id="send">➤</button></div></div>`;
+  const stream=s.querySelector('#stream');
+  if(!chatEls.length)stream.appendChild(el(`<div class="empty">Speak or type naturally — I turn it into tasks, decisions, commitments and approvals.</div>`));
+  chatEls.forEach(m=>stream.appendChild(m));
+  const input=s.querySelector('#msg');
+  s.querySelector('#send').onclick=()=>sendMsg(input);
+  input.onkeydown=e=>{if(e.key==='Enter')sendMsg(input);};
+  setupMic(s.querySelector('#mic'),input);
+  stream.scrollTop=stream.scrollHeight;
+}
+async function sendMsg(input){
+  const text=input.value.trim();if(!text)return;input.value='';
+  const stream=document.getElementById('stream');
+  if(stream.querySelector('.empty'))stream.innerHTML='';
+  const mine=el(`<div class="msg me"><div class="bubble">${esc(text)}</div></div>`);
+  chatEls.push(mine);stream.appendChild(mine);stream.scrollTop=stream.scrollHeight;
+  try{
+    const res=await api('/api/chat',{method:'POST',body:JSON.stringify({message:text,speaker:CURRENT.name})});
+    const card=renderInterp(res);chatEls.push(card);stream.appendChild(card);
+  }catch(e){const er=el(`<div class="msg"><div class="bubble">⚠ ${esc(e.message)}</div></div>`);stream.appendChild(er);}
+  stream.scrollTop=stream.scrollHeight;refreshBadges();
+}
+function renderInterp(res){
+  const items=res.interpretation.map(i=>`<div class="item">• ${esc(i.summary)} <span class="muted tiny">(${esc(i.tool)})</span></div>`).join('');
+  const exec=res.executed.map(e=>`<div class="item">✅ ${esc(e.summary)}</div>`).join('');
+  const wait=res.awaiting_approval.map(a=>`<div class="item" id="w_${a.action_id}">⏳ ${esc(a.summary)} <span class="pill amber">${esc(a.risk||'approval')}</span>
+     <div class="btnrow"><button class="btn slim ok" onclick="approveAction('${a.action_id}')">Approve</button>
+       <button class="btn slim danger" onclick="rejectAction('${a.action_id}')">Reject</button></div></div>`).join('');
+  return el(`<div class="msg"><div class="bubble" style="max-width:560px"><b>I identified</b>
+    <div class="interp">${items||'<div class="item muted">Nothing actionable.</div>'}
+    ${exec?`<div style="margin-top:6px">${exec}</div>`:''}${wait?`<div style="margin-top:6px">${wait}</div>`:''}</div></div></div>`);
+}
+async function approveAction(id){await api('/api/actions/'+id+'/approve',{method:'POST'});document.getElementById('w_'+id).innerHTML='<span class="pill green">✅ Approved & executed</span>';refreshBadges();}
+async function rejectAction(id){await api('/api/actions/'+id+'/reject',{method:'POST'});document.getElementById('w_'+id).innerHTML='<span class="pill red">Rejected</span>';refreshBadges();}
+function setupMic(mic,input){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){mic.onclick=()=>{const t=prompt('Voice note — speak or paste the transcript:');if(t)input.value=t;};return;}
+  const rec=new SR();rec.lang='en-IN';rec.interimResults=false;let on=false;
+  mic.onclick=()=>{on?rec.stop():rec.start();};
+  rec.onstart=()=>{on=true;mic.classList.add('rec');};
+  rec.onend=()=>{on=false;mic.classList.remove('rec');};
+  rec.onresult=e=>{input.value=e.results[0][0].transcript;input.focus();};
+}
+
+/* -- My Work (member) -- */
+async function renderMyWork(){
+  const s=document.getElementById('mywork');s.innerHTML='<div class="empty">Loading…</div>';
+  const tasks=await api('/api/my/tasks?person='+encodeURIComponent(CURRENT.person_id));
+  const open=tasks.filter(t=>t.status!=='done');const done=tasks.filter(t=>t.status==='done');
+  const actions=t=>{
+    let a='<div class="btnrow">';
+    if(t.acceptance_status==='pending')a+=`<button class="btn slim ok" onclick="taskAction('${t.task_id}','accept')">Accept</button><button class="btn slim sec" onclick="taskAction('${t.task_id}','decline')">Decline</button>`;
+    if(t.acceptance_status==='accepted'&&t.status!=='submitted'){
+      a+=`<button class="btn slim sec" onclick="promptProgress('${t.task_id}')">Update %</button>`;
+      a+=t.blocked?`<button class="btn slim sec" onclick="taskAction('${t.task_id}','unblock')">Unblock</button>`:`<button class="btn slim sec" onclick="promptBlocker('${t.task_id}')">Report blocker</button>`;
+      a+=`<button class="btn slim" onclick="taskAction('${t.task_id}','complete')">Mark done</button>`;
+    }
+    if(t.status==='submitted')a+='<span class="pill amber">Submitted — awaiting approval</span>';
+    return a+'</div>';
+  };
+  s.innerHTML=`<div class="pagehead"><h2>My Work</h2><span class="pill blue">${open.length} open</span></div>
+    <div class="card"><h3>Assigned to me</h3>${open.map(t=>`<div class="row"><div class="grow"><div class="t">${esc(t.title)}</div>
+      <div class="muted tiny">${t.project?esc(t.project)+' · ':''}${t.progress}% ${t.blocked?'· <span style="color:var(--red)">⚠ '+esc(t.blocker_reason||'blocked')+'</span>':''}</div>
+      <div class="bar" style="margin-top:6px"><span style="width:${t.progress}%"></span></div>${actions(t)}</div>
+      ${t.deadline?`<span class="pill ${t.deadline<todayStr()?'overdue':''}">${t.deadline}</span>`:''}</div>`).join('')||'<div class="empty">No open tasks. 🎉</div>'}</div>
+    ${done.length?`<div class="card"><h3>Recently done</h3>${done.map(t=>taskRow(t)).join('')}</div>`:''}`;
+}
+async function taskAction(id,action){await api(`/api/tasks/${id}/${action}`,{method:'POST',body:JSON.stringify({actor:CURRENT.name})});RENDER[CURRENT_SCREEN]();refreshBadges();}
+function promptProgress(id){const v=prompt('Progress % (0-100):');if(v!==null)api(`/api/tasks/${id}/progress`,{method:'POST',body:JSON.stringify({progress:parseInt(v)||0,actor:CURRENT.name})}).then(()=>RENDER[CURRENT_SCREEN]());}
+function promptBlocker(id){const v=prompt('What is blocking this?');if(v)api(`/api/tasks/${id}/blocker`,{method:'POST',body:JSON.stringify({reason:v,actor:CURRENT.name})}).then(()=>{RENDER[CURRENT_SCREEN]();refreshBadges();});}
+
+/* -- People (manage) -- */
+async function renderPeople(){
+  const s=document.getElementById('people');s.innerHTML='<div class="empty">Loading…</div>';
+  const people=await api('/api/people');
+  s.innerHTML=`<div class="pagehead"><h2>People</h2>
+    <button class="btn slim" style="margin-left:auto" onclick="openPersonModal()">＋ Add person</button></div>
+    <div class="card">${people.map(p=>`<div class="row"><div class="avatar">${initials(p.name)}</div>
+      <div class="grow"><div class="t">${esc(p.name)} ${!p.active?'<span class="pill">inactive</span>':''}</div>
+      <div class="muted tiny">${esc(p.designation||'')}${p.department?' · '+esc(p.department):''} · ${esc(p.email||'no email')}</div></div>
+      <span class="pill ${p.permission_level==='ceo'?'blue':''}">${esc(p.permission_level)}</span>
+      <button class="btn slim sec" onclick='openPersonModal(${JSON.stringify(p).replace(/'/g,"&#39;")})'>Edit</button>
+      ${p.active?`<button class="btn slim sec" onclick="togglePerson('${p.person_id}',false)">Disable</button>`:`<button class="btn slim ok" onclick="togglePerson('${p.person_id}',true)">Enable</button>`}
+      </div>`).join('')}</div>`;
+}
+async function togglePerson(id,on){await api(`/api/people/${id}/${on?'activate':'deactivate'}`,{method:'POST'});renderPeople();}
+
+/* -- Company -- */
+async function renderCompany(){
+  const s=document.getElementById('company');s.innerHTML='<div class="empty">Loading…</div>';
+  const [projects,people,tasks]=await Promise.all([api('/api/projects'),api('/api/people'),api('/api/tasks')]);
+  const approvable=tasks.filter(t=>t.status==='submitted');
+  s.innerHTML=`<div class="pagehead"><h2>Company</h2>
+    <button class="btn slim" style="margin-left:auto" onclick="openTaskModal()">＋ New task</button></div>
+    ${approvable.length?`<div class="card"><h3>🔔 Awaiting your approval</h3>${approvable.map(t=>`<div class="row"><div class="grow"><div class="t">${esc(t.title)}</div><div class="muted tiny">by ${esc(t.assigned_to||'—')}</div></div><button class="btn slim ok" onclick="taskAction('${t.task_id}','approve')">Approve</button></div>`).join('')}</div>`:''}
+    <div class="card"><h3>Projects</h3><div class="tablewrap"><table><tr><th>Project</th><th>Owner</th><th>Health</th><th>Progress</th><th>Deadline</th></tr>
+      ${projects.map(p=>`<tr><td>${esc(p.project_name)}</td><td>${esc(p.owner||'—')}</td><td><span class="pill ${p.health==='green'?'green':p.health==='red'?'red':'amber'}">${p.health}</span></td><td>${p.progress}%</td><td>${p.deadline||'—'}</td></tr>`).join('')}</table></div></div>
+    <div class="card"><h3>Tasks</h3><div class="tablewrap"><table><tr><th>Task</th><th>Owner</th><th>Project</th><th>Priority</th><th>Status</th><th>Deadline</th></tr>
+      ${tasks.map(t=>`<tr><td>${esc(t.title)}</td><td>${esc(t.assigned_to||'—')}</td><td>${esc(t.project||'—')}</td><td><span class="pill ${t.priority}">${t.priority}</span></td><td>${esc(t.status)}${t.blocked?' ⚠':''}</td><td>${t.deadline||'—'}</td></tr>`).join('')||'<tr><td colspan=6 class="empty">No tasks.</td></tr>'}</table></div></div>`;
+}
+
+/* -- Team workload -- */
+async function renderTeam(){
+  const s=document.getElementById('team');s.innerHTML='<div class="empty">Loading…</div>';
+  const w=await api('/api/team/workload');
+  s.innerHTML=`<div class="pagehead"><h2>Team workload</h2></div>
+    <div class="card">${w.map(p=>`<div class="row"><div class="avatar">${initials(p.name)}</div>
+      <div class="grow"><div class="t">${esc(p.name)}</div><div class="muted tiny">${esc(p.designation||'')}</div></div>
+      ${p.overdue?`<span class="pill overdue">${p.overdue} overdue</span>`:''}${p.blocked?`<span class="pill amber">${p.blocked} blocked</span>`:''}
+      <span class="pill ${p.capacity==='overloaded'?'red':p.capacity==='light'?'green':'amber'}">${p.open} open · ${p.capacity}</span></div>`).join('')}</div>`;
+}
+
+/* -- Memory -- */
+async function renderMemory(){
+  const s=document.getElementById('memory');s.innerHTML='<div class="empty">Loading…</div>';
+  const [mem,commits,decisions]=await Promise.all([api('/api/memory'),api('/api/commitments'),api('/api/decisions')]);
+  s.innerHTML=`<div class="pagehead"><h2>Memory</h2></div>
+    <div class="card"><h3>Decisions</h3>${decisions.map(d=>`<div class="row"><div class="grow"><div class="t">${esc(d.decision)}</div><div class="muted tiny">${esc(d.owner||'')} · ${d.decision_date.slice(0,10)}</div></div></div>`).join('')||'<div class="empty">None.</div>'}</div>
+    <div class="card"><h3>Commitments</h3>${commits.map(c=>`<div class="row"><div class="grow"><div class="t">${esc(c.text)}</div><div class="muted tiny">to ${esc(c.made_to||'—')} · ${esc(c.status)}</div></div>${c.deadline?`<span class="pill">${c.deadline}</span>`:''}</div>`).join('')||'<div class="empty">None.</div>'}</div>
+    <div class="card"><h3>Company facts & preferences</h3>${mem.map(m=>`<div class="row"><div class="grow"><div class="t">${esc(m.content)}</div><div class="muted tiny">${esc(m.memory_type)}${m.subject?' · '+esc(m.subject):''}</div></div><button class="btn slim sec" onclick="delMem('${m.memory_id}')">✕</button></div>`).join('')||'<div class="empty">None.</div>'}
+      <div class="btnrow" style="margin-top:12px"><input id="memc" placeholder="Add a fact or preference…"><button class="btn slim" onclick="addMem()">Add</button></div></div>`;
+}
+async function addMem(){const v=document.getElementById('memc').value.trim();if(!v)return;await api('/api/memory',{method:'POST',body:JSON.stringify({content:v,memory_type:'fact'})});renderMemory();}
+async function delMem(id){await api('/api/memory/'+id,{method:'DELETE'});renderMemory();}
+
+/* -- Processes -- */
+async function renderProcesses(){
+  const s=document.getElementById('processes');s.innerHTML='<div class="empty">Loading…</div>';
+  const d=await api('/api/processes');
+  s.innerHTML=`<div class="pagehead"><h2>Processes</h2></div>
+    <div class="card"><h3>Candidates (observed)</h3>${d.candidates.length?d.candidates.map(c=>`<div class="row"><div class="grow"><div class="t">${esc(c.process_candidate)} <span class="muted tiny">×${c.frequency}</span></div><div class="muted tiny">${esc(c.event_sequence||c.recommendation||'')}</div></div><button class="btn slim" onclick='approveProc(${JSON.stringify(c).replace(/'/g,"&#39;")})'>Approve</button></div>`).join(''):'<div class="empty">No repeated processes detected yet. Complete tasks to build the event log.</div>'}</div>
+    <div class="card"><h3>Approved processes</h3>${d.definitions.length?d.definitions.map(p=>`<div class="row"><div class="grow"><div class="t">${esc(p.process_name)}</div><div class="muted tiny">${esc(p.status)} · ${esc(p.automation_level)}</div></div></div>`).join(''):'<div class="empty">None approved yet.</div>'}</div>`;
+}
+async function approveProc(c){await api('/api/processes/approve',{method:'POST',body:JSON.stringify({process_name:c.process_candidate,trigger:c.project||'',steps:c.event_sequence||''})});renderProcesses();}
+
+/* -- Activity (audit) -- */
+async function renderActivity(){
+  const s=document.getElementById('activity');s.innerHTML='<div class="empty">Loading…</div>';
+  const acts=await api('/api/actions');
+  s.innerHTML=`<div class="pagehead"><h2>Agent Activity</h2><span class="muted small">audit trail</span></div>
+    <div class="card"><div class="tablewrap"><table><tr><th>Action</th><th>Tool</th><th>Risk</th><th>Status</th><th>By</th><th>When</th></tr>
+    ${acts.map(a=>`<tr><td>${esc(a.requested_action)}</td><td><code>${esc(a.tool)}</code></td><td><span class="pill ${a.risk_level==='never'?'red':a.risk_level==='medium'?'amber':'green'}">${esc(a.risk_level)}</span></td><td>${esc(a.execution_status)}</td><td>${esc(a.approved_by||'—')}</td><td class="muted tiny">${a.created_at.slice(0,16).replace('T',' ')}</td></tr>`).join('')||'<tr><td colspan=6 class="empty">No actions yet.</td></tr>'}</table></div></div>`;
+}
+
+/* -- Insights: agri news topics + photo → post topics -- */
+async function renderContent(){
+  const s=document.getElementById('content');
+  s.innerHTML=`<div class="pagehead"><h2>Insights</h2><span class="muted small">Agri news · content ideas</span></div>
+    <div class="card"><h3>📸 Suggest post topics from a photo</h3>
+      <p class="muted small" style="margin:0 0 10px">Upload a field/product photo and get post ideas.</p>
+      <div class="btnrow"><label class="btn slim" style="display:inline-block">Choose photo<input type="file" id="photoIn" accept="image/*" style="display:none"></label>
+        <span class="muted small" id="photoName"></span></div>
+      <div id="photoOut"></div></div>
+    <div class="card"><h3>🔥 Prioritised topics for us <button class="btn slim sec" style="float:right" onclick="renderContent()">Refresh</button></h3>
+      <div id="topicsOut"><div class="empty">Loading trending agriculture topics…</div></div></div>
+    <div class="card"><h3>🗞️ Latest agriculture news</h3><div id="newsOut"><div class="empty">Loading…</div></div></div>`;
+  // photo upload
+  const inp=s.querySelector('#photoIn');
+  inp.onchange=async()=>{
+    const f=inp.files[0]; if(!f)return;
+    s.querySelector('#photoName').textContent=f.name;
+    const out=s.querySelector('#photoOut');out.innerHTML='<div class="empty">Analysing photo…</div>';
+    try{
+      const fd=new FormData();fd.append('file',f);
+      const r=await fetch('/api/content/photo',{method:'POST',body:fd});
+      const d=await r.json();
+      out.innerHTML=`<div class="interp" style="margin-top:10px">
+        ${d.scene?`<div class="small" style="margin-bottom:6px"><b>In your photo:</b> ${esc(d.scene)}</div>`:''}
+        ${(d.suggestions||[]).map(x=>`<div class="item"><b>${esc(x.title)}</b>${x.angle?` — <span class="muted small">${esc(x.angle)}</span>`:''}
+          <div class="btnrow"><button class="btn slim" onclick='topicTask(${JSON.stringify({topic:x.title,angle:x.angle}).replace(/'/g,"&#39;")})'>＋ Create post task</button></div></div>`).join('')}
+        <div class="muted tiny" style="margin-top:8px">Analysed by: ${esc(d.analyzed_by||'')}${d.note?' · '+esc(d.note):''}</div></div>`;
+    }catch(e){out.innerHTML=`<div class="empty">Upload failed: ${esc(e.message)}</div>`;}
+  };
+  // topics + news
+  loadTopics();loadNews();
+}
+async function loadTopics(){
+  const box=document.getElementById('topicsOut');
+  try{
+    const d=await api('/api/news/topics');
+    box.innerHTML=(d.online?'':'<div class="muted tiny" style="margin-bottom:6px">⚠ Offline — showing sample topics. Live news appears when deployed.</div>')+
+      d.topics.map(t=>`<div class="row"><div class="grow"><div class="t">${esc(t.topic)} ${t.story_count?`<span class="pill blue">${t.story_count} stories</span>`:''}</div>
+        <div class="muted tiny">${esc(t.suggested_angle)}</div>
+        ${t.headlines.length?`<div class="muted tiny" style="margin-top:4px">${t.headlines.map(h=>h.url&&h.url!=='#'?`<a href="${esc(h.url)}" target="_blank" rel="noopener">${esc(h.title.slice(0,70))}</a>`:esc(h.title.slice(0,70))).join(' · ')}</div>`:''}</div>
+        <button class="btn slim" onclick='topicTask(${JSON.stringify({topic:t.topic,angle:t.suggested_angle}).replace(/'/g,"&#39;")})'>＋ Post task</button></div>`).join('');
+  }catch(e){box.innerHTML=`<div class="empty">${esc(e.message)}</div>`;}
+}
+async function loadNews(){
+  const box=document.getElementById('newsOut');
+  try{
+    const d=await api('/api/news');
+    box.innerHTML=d.items.map(n=>`<div class="row"><div class="grow"><div class="t">${n.url&&n.url!=='#'?`<a href="${esc(n.url)}" target="_blank" rel="noopener">${esc(n.title)}</a>`:esc(n.title)}</div>
+      <div class="muted tiny">${esc(n.source||'')}${n.region?' · '+esc(n.region):''}${n.matched&&n.matched.length?' · '+n.matched.slice(0,3).map(esc).join(', '):''}</div></div>
+      ${n.relevance?`<span class="pill ${n.relevance>=10?'green':n.relevance>=5?'amber':''}">rel ${n.relevance}</span>`:''}</div>`).join('')||'<div class="empty">No news.</div>';
+  }catch(e){box.innerHTML=`<div class="empty">${esc(e.message)}</div>`;}
+}
+async function topicTask(t){
+  await api('/api/content/topic-task',{method:'POST',body:JSON.stringify({topic:t.topic,angle:t.angle,assigned_to:'Priya'})});
+  toast('Post task created & sent for your approval');
+}
+function toast(msg){const el2=el(`<div style="position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:20px;z-index:60;font-size:13px;box-shadow:var(--shadow)">${esc(msg)}</div>`);document.body.appendChild(el2);setTimeout(()=>el2.remove(),2600);}
+
+const RENDER={today:renderToday,chat:renderChat,mywork:renderMyWork,people:renderPeople,
+  company:renderCompany,team:renderTeam,memory:renderMemory,processes:renderProcesses,
+  content:renderContent,activity:renderActivity};
+
+/* ================= modals ================= */
+function openModal(html){document.getElementById('modalRoot').innerHTML=`<div class="modal-bg" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`;}
+function closeModal(){document.getElementById('modalRoot').innerHTML='';}
+
+async function openTaskModal(){
+  const people=await api('/api/people');const projects=await api('/api/projects');
+  const opts=people.filter(p=>p.active).map(p=>`<option value="${esc(p.name)}">${esc(p.name)}</option>`).join('');
+  const projOpts='<option value="">— none —</option>'+projects.map(p=>`<option>${esc(p.project_name)}</option>`).join('');
+  openModal(`<h3>New task</h3>
+    <div class="field"><label>Title</label><input id="tk_title" placeholder="e.g. Complete GeM checklist"></div>
+    <div class="two"><div class="field"><label>Assign to</label><select id="tk_who">${opts}</select></div>
+      <div class="field"><label>Project</label><select id="tk_proj">${projOpts}</select></div></div>
+    <div class="two"><div class="field"><label>Deadline</label><input id="tk_dl" type="date"></div>
+      <div class="field"><label>Priority</label><select id="tk_prio"><option>medium</option><option>high</option><option>low</option></select></div></div>
+    <div class="field"><label><input type="checkbox" id="tk_appr" style="width:auto;margin-right:6px">Requires my approval before done</label></div>
+    <div class="err" id="tk_err"></div>
+    <div class="btnrow"><button class="btn" onclick="saveTask()">Create task</button><button class="btn sec slim" onclick="closeModal()">Cancel</button></div>`);
+}
+async function saveTask(){
+  const title=document.getElementById('tk_title').value.trim();
+  if(!title){document.getElementById('tk_err').textContent='Title is required';return;}
+  await api('/api/tasks',{method:'POST',body:JSON.stringify({
+    title,assigned_to:document.getElementById('tk_who').value,assigned_by:CURRENT.name,
+    project:document.getElementById('tk_proj').value||null,deadline:document.getElementById('tk_dl').value||null,
+    priority:document.getElementById('tk_prio').value,approval_required:document.getElementById('tk_appr').checked})});
+  closeModal();if(RENDER[CURRENT_SCREEN])RENDER[CURRENT_SCREEN]();refreshBadges();
+}
+async function openPersonModal(p){
+  const people=await api('/api/people');
+  const mgrOpts='<option value="">— none —</option>'+people.map(x=>`<option ${p&&p.manager===x.name?'selected':''}>${esc(x.name)}</option>`).join('');
+  const edit=!!p;p=p||{};
+  openModal(`<h3>${edit?'Edit':'Add'} person</h3>
+    <div class="field"><label>Name</label><input id="p_name" value="${esc(p.name||'')}"></div>
+    <div class="two"><div class="field"><label>Email</label><input id="p_email" value="${esc(p.email||'')}"></div>
+      <div class="field"><label>Designation</label><input id="p_desig" value="${esc(p.designation||'')}"></div></div>
+    <div class="two"><div class="field"><label>Department</label><input id="p_dept" value="${esc(p.department||'')}"></div>
+      <div class="field"><label>Manager</label><select id="p_mgr">${mgrOpts}</select></div></div>
+    <div class="field"><label>Access level</label><select id="p_perm">
+      <option value="member" ${p.permission_level==='member'?'selected':''}>member</option>
+      <option value="manager" ${p.permission_level==='manager'?'selected':''}>manager</option>
+      <option value="ceo" ${p.permission_level==='ceo'?'selected':''}>ceo</option></select></div>
+    <div class="err" id="p_err"></div>
+    <div class="btnrow"><button class="btn" onclick="savePerson('${edit?p.person_id:''}')">${edit?'Save':'Add person'}</button>
+      <button class="btn sec slim" onclick="closeModal()">Cancel</button></div>`);
+}
+async function savePerson(id){
+  const name=document.getElementById('p_name').value.trim();
+  if(!name){document.getElementById('p_err').textContent='Name is required';return;}
+  const body={name,email:document.getElementById('p_email').value.trim()||null,
+    designation:document.getElementById('p_desig').value.trim()||null,
+    department:document.getElementById('p_dept').value.trim()||null,
+    manager:document.getElementById('p_mgr').value||null,
+    permission_level:document.getElementById('p_perm').value};
+  if(id)await api('/api/people/'+id,{method:'PATCH',body:JSON.stringify(body)});
+  else await api('/api/people',{method:'POST',body:JSON.stringify(body)});
+  closeModal();renderPeople();
+}
+
+/* ================= boot ================= */
+if('serviceWorker' in navigator){navigator.serviceWorker.register('/sw.js').catch(()=>{});}
+bootLogin();
+if(store.user){CURRENT=store.user;enterApp();}
+</script>
+</body>
+</html>
